@@ -1,4 +1,4 @@
-#include "msp430/ssd1306.h"
+#include "common/ssd1306.h"
 
 static const unsigned char config  [] = {0x3C, 0xAE};             // Display off
 static const unsigned char config1 [] = {0x3C, 0xD5, 0x80 };       // set display clock division

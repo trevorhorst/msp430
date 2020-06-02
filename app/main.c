@@ -1,7 +1,7 @@
 #include <msp430.h>
-#include "msp430/ssd1306.h"
-#include "msp430/i2c.h"
-#include "msp430/resources.h"
+#include "common/ssd1306.h"
+#include "common/i2c.h"
+#include "common/resources.h"
 
 int main(void)
 {

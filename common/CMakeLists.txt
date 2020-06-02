@@ -9,9 +9,9 @@ set( SOURCE ${SOURCE}
     )
 
 set( INCLUDE ${INCLUDE}
-    include/msp430/resources.h
-    include/msp430/i2c.h
-    include/msp430/ssd1306.h
+    include/common/resources.h
+    include/common/i2c.h
+    include/common/ssd1306.h
     )
 
 add_library( ${PROJECT_NAME} STATIC ${SOURCE} ${INCLUDE} )

@@ -1,4 +1,4 @@
-#include "msp430/i2c.h"
+#include "common/i2c.h"
 
 static int _transmit(
         const struct i2c_device *dev
