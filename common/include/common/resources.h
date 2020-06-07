@@ -1,6 +1,8 @@
 #ifndef RESOURCES_H
 #define RESOURCES_H
 
+#define SYMBOL_LENGTH 5
+
 extern const char font[];
 extern const unsigned int font_size;
 
@@ -10,6 +12,11 @@ const char *load( const char *resource, unsigned int size )
     // memcpy( r, resource, size );
     // r[ size ] = '\0';
     return r;
+}
+
+const char *getSymbol( char symbol )
+{
+    return &font[ (int)( symbol * SYMBOL_LENGTH ) ];
 }
 
 char getChar( int offset )

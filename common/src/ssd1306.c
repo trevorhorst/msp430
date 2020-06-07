@@ -84,6 +84,11 @@ void ssd1306_init( struct i2c_device *dev )
 
 }
 
+void ssd1306_write_char( const struct i2c_device *dev, struct i2c_data *data )
+{
+    i2c_transfer( dev, data );
+}
+
 void ssd1306_reset_cursor( const struct i2c_device *dev )
 {
     // Reset column address; start 0 end 127

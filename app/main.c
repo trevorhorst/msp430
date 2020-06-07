@@ -1,7 +1,33 @@
 #include <msp430.h>
+#include "string.h"
 #include "common/ssd1306.h"
 #include "common/i2c.h"
 #include "common/resources.h"
+
+static const char empty_line[]    = "                ";
+static const char i_love_you[]    = "   I LOVE YOU   ";
+static const char jennifer[]      = "    JENNIFER    ";
+static const char killingsworth[] = "  KILLINGSWORTH ";
+static const char please_touch[]  = "  PLEASE TOUCH  ";
+static const char my_butt[]       = "    MY  BUTT    ";
+
+void write_symbol_to_screen( struct i2c_device *dev, const unsigned char val )
+{
+    unsigned char map[9];
+    memset( &map, 0, 9 );
+    const char *symbol = getSymbol( (char)(val) );
+    map[0] = 0x40;
+    memcpy( &map[1], symbol, SYMBOL_LENGTH );
+    struct i2c_data data = { 9, &map };
+    ssd1306_write_char( dev, &data );
+}
+
+void write_string_to_screen( struct i2c_device *dev, const char *str )
+{
+    for(unsigned int i = 0; i < strlen( str ); i++ ) {
+        write_symbol_to_screen( dev, (unsigned char)str[ i ] );
+    }
+}
 
 int main(void)
 {
@@ -54,21 +80,34 @@ int main(void)
     ssd1306_init( &ssd1306 );
     ssd1306_reset_cursor( &ssd1306 );
     ssd1306_clear_screen( &ssd1306 );
-    ssd1306_fill_screen( &ssd1306 );
+    // ssd1306_fill_screen( &ssd1306 );
 
-    int alternate = 0;
+    unsigned char val = 0;
     while(1) {
-        P1OUT ^= BIT0;
-        ssd1306_reset_cursor( &ssd1306 );
 
+        // P1OUT ^= BIT0;
+
+
+        if( val == 20 ) {
+            // ssd1306_clear_screen( &ssd1306 );
+            // ssd1306_reset_cursor( &ssd1306 );
+            write_string_to_screen( &ssd1306, please_touch );
+            write_string_to_screen( &ssd1306, my_butt );
+        }
+
+        if( val == 5 ) {
+            write_string_to_screen( &ssd1306, empty_line );
+            write_string_to_screen( &ssd1306, empty_line );
+            write_string_to_screen( &ssd1306, i_love_you );
+            write_string_to_screen( &ssd1306, jennifer );
+            write_string_to_screen( &ssd1306, killingsworth );
+            write_string_to_screen( &ssd1306, empty_line );
+        }
+
+
+        // Delay
         for(volatile unsigned int i = 25000; i > 0; i--);
-        alternate ^= BIT0;
-        // if(alternate) {
-        //     ssd1306_clear_screen( &ssd1306 );
-        // } else {
-        //     ssd1306_fill_screen( &ssd1306 );
-        // }
-
+        val++;
     }
 
     return 0;
