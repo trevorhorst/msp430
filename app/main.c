@@ -4,6 +4,8 @@
 #include "common/i2c.h"
 #include "common/resources.h"
 
+#include "project/project.h"
+
 static const char empty_line[]    = "                ";
 static const char i_love_you[]    = "   I LOVE YOU   ";
 static const char jennifer[]      = "    JENNIFER    ";

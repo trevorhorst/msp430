@@ -7,9 +7,22 @@ set( CMAKE_C_FLAGS
 
 project(msp430 LANGUAGES C ASM)
 
+if(DEFINED ENV{TARGET_PROJECT})
+    set( TARGET_PROJECT "$ENV{TARGET_PROJECT}" )
+else()
+    message("No project set, building test project")
+    set( TARGET_PROJECT "test" )
+endif()
+message("Building ${TARGET_PROJECT}")
+
 add_subdirectory(app)
 add_subdirectory(common)
-# add_subdirectory(hardware/${CONTROL_PROJECT})
+add_subdirectory(projects/${TARGET_PROJECT})
+
+if( USE_I2C ) 
+    message( "Usng I2C Library" )
+    add_subdirectory( libraries/i2c )
+endif()
 
 # install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION ${CONTROL_BIN_DIR})
 

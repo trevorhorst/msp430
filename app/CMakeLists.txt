@@ -5,6 +5,6 @@ project( msp430.elf LANGUAGES C ASM )
 add_executable(${PROJECT_NAME} main.c)
 target_link_libraries(
     ${PROJECT_NAME}
-    ${CONTROL_PROJECT}
+    ${TARGET_PROJECT}
     common
     )   
