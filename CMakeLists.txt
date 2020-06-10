@@ -19,9 +19,14 @@ add_subdirectory(app)
 add_subdirectory(common)
 add_subdirectory(projects/${TARGET_PROJECT})
 
-if( USE_I2C ) 
-    message( "Usng I2C Library" )
+if( USE_I2C )
+    message( "Using I2C Library" )
     add_subdirectory( libraries/i2c )
+endif()
+
+if( USE_SSD1306 )
+    message( "Using SSD1306 Library" )
+    add_subdirectory( libraries/ssd1306 )
 endif()
 
 # install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION ${CONTROL_BIN_DIR})

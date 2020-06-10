@@ -3,7 +3,8 @@ project(test
     LANGUAGES C ASM
     )
 
-# option( USE_HTTP "Use optional HTTP library" ON )
+option( USE_I2C "Use optional I2C library" ON )
+option( USE_SSD1306 "Use optional SSD1306 library" ON )
 
 # List of source files
 set( SOURCE
@@ -26,6 +27,8 @@ add_library(
 target_link_libraries(
     ${PROJECT_NAME}
     PRIVATE
+    common
+    ssd1306
     )
 
 target_include_directories(

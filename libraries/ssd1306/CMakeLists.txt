@@ -1,19 +1,19 @@
 cmake_minimum_required(VERSION 3.5)
 
 project(
-    i2c
-    DESCRIPTION "I2C Serial Communication Library"
+    ssd1306
+    DESCRIPTION "SSD1306 Library"
     LANGUAGES C ASM
     )
 
 set( HEADERS
     ${HEADERS}
-    include/i2c/i2c.h
+    include/ssd1306/ssd1306.h
     )
 
 set( SOURCE
     ${SOURCE}
-    src/i2c.c
+    src/ssd1306.c
     )
 
 add_library(
@@ -24,6 +24,7 @@ add_library(
 
 target_link_libraries(
     ${PROJECT_NAME}
+    i2c
     )
 
 # Specifies include directories to use when compiling a given target
