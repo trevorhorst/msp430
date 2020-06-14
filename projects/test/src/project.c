@@ -30,8 +30,11 @@ void write_string_to_screen( struct i2c_device *dev, const char *str )
 int run( void )
 {
     /* Configure P1.1 and P1.2 for UART (USCI_A0) */
-    P1SEL |= 0x6;
-    P1SEL2 |= 0x6;
+    // P1SEL |= 0x6;
+    // P1SEL2 |= 0x6;
+    P2REN |= BIT0;
+    P2DIR |= BIT0;
+    P2OUT &= ~BIT0;
 
     /* Configure P1.6 and P1.7 for I2C */
     P1SEL  |= BIT6 + BIT7;
@@ -47,18 +50,18 @@ int run( void )
     struct i2c_device ssd1306 = { 0x3C };
 
     if( i2c_check_ack( &ssd1306 ) != 0 ) {
-        // Fail
+        // Failed to ack device
         P2DIR |= BIT2;
         P2OUT |= BIT2;
     } else {
-        // Success
+        // Successfully acked the device
         P1DIR |= BIT0;
         P1OUT |= BIT0;
     }
 
-    ssd1306_init( &ssd1306 );
-    ssd1306_reset_cursor( &ssd1306 );
-    ssd1306_clear_screen( &ssd1306 );
+    // ssd1306_init( &ssd1306 );
+    // ssd1306_reset_cursor( &ssd1306 );
+    // ssd1306_clear_screen( &ssd1306 );
     // ssd1306_fill_screen( &ssd1306 );
 
     unsigned char val = 0;
@@ -66,21 +69,26 @@ int run( void )
 
         // P1OUT ^= BIT0;
 
+        // if( val == 20 ) {
+        //     // ssd1306_clear_screen( &ssd1306 );
+        //     // ssd1306_reset_cursor( &ssd1306 );
+        // }
 
-        if( val == 20 ) {
-            // ssd1306_clear_screen( &ssd1306 );
-            // ssd1306_reset_cursor( &ssd1306 );
-            write_string_to_screen( &ssd1306, please_touch );
-            write_string_to_screen( &ssd1306, my_butt );
-        }
-
-        if( val == 5 ) {
-            write_string_to_screen( &ssd1306, empty_line );
-            write_string_to_screen( &ssd1306, empty_line );
-            write_string_to_screen( &ssd1306, i_love_you );
-            write_string_to_screen( &ssd1306, jennifer );
-            write_string_to_screen( &ssd1306, killingsworth );
-            write_string_to_screen( &ssd1306, empty_line );
+        if( (val % 5) == 0 ) {
+            P1OUT ^= BIT0;
+            if( P1OUT & BIT0 ){
+                ssd1306_init( &ssd1306 );
+                ssd1306_reset_cursor( &ssd1306 );
+                ssd1306_clear_screen( &ssd1306 );
+                write_string_to_screen( &ssd1306, empty_line );
+                write_string_to_screen( &ssd1306, empty_line );
+                write_string_to_screen( &ssd1306, i_love_you );
+                write_string_to_screen( &ssd1306, jennifer );
+                write_string_to_screen( &ssd1306, killingsworth );
+                write_string_to_screen( &ssd1306, empty_line );
+                write_string_to_screen( &ssd1306, please_touch );
+                write_string_to_screen( &ssd1306, my_butt );
+            }
         }
 
 

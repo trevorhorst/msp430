@@ -58,7 +58,6 @@ static struct i2c_data data25 = {9, &config25};
 void ssd1306_init( struct i2c_device *dev )
 {
     i2c_transfer( dev, &data);
-    for(volatile unsigned int i = 25000; i > 0; i--);
     i2c_transfer( dev, &data1);
     i2c_transfer( dev, &data2);
     i2c_transfer( dev, &data3);
