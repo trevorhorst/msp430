@@ -47,21 +47,27 @@ int run( void )
         while (1);
     }
 
+    // This should turn off the display
+    P1DIR |= BIT0;
+    P1OUT &= ~BIT0;
+    for(volatile unsigned int i = 25000; i > 0; i--);
+
     struct i2c_device ssd1306 = { 0x3C };
 
     if( i2c_check_ack( &ssd1306 ) != 0 ) {
         // Failed to ack device
-        P2DIR |= BIT2;
-        P2OUT |= BIT2;
+        P2DIR &= ~BIT2;
+        P2OUT &= ~BIT2;
     } else {
         // Successfully acked the device
-        P1DIR |= BIT0;
-        P1OUT |= BIT0;
+        P2DIR |= BIT2;
+        P2OUT |= BIT2;
     }
 
-    // ssd1306_init( &ssd1306 );
-    // ssd1306_reset_cursor( &ssd1306 );
-    // ssd1306_clear_screen( &ssd1306 );
+    P1OUT |= BIT0;
+    ssd1306_clear_screen( &ssd1306 );
+    ssd1306_init( &ssd1306 );
+    ssd1306_reset_cursor( &ssd1306 );
     // ssd1306_fill_screen( &ssd1306 );
 
     unsigned char val = 0;
