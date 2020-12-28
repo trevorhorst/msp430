@@ -24,6 +24,11 @@ if( USE_I2C )
     add_subdirectory( libraries/i2c )
 endif()
 
+if( USE_UART )
+    message( "Using UART Library" )
+    add_subdirectory( libraries/uart )
+endif()
+
 if( USE_SSD1306 )
     message( "Using SSD1306 Library" )
     add_subdirectory( libraries/ssd1306 )
