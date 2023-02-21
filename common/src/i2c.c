@@ -39,14 +39,14 @@ int i2c_check_ack( const struct i2c_device *dev )
     (void)dev;
 
     /* Check for ACK */
-    if (UCB0STAT & UCNACKIFG) {
-        /* Stop the I2C transmission */
+    if( UCB0STAT & UCNACKIFG ) {
+        // Stop the I2C transmission
         UCB0CTL1 |= UCTXSTP;
 
-        /* Clear the interrupt flag */
+        // Clear the interrupt flag
         UCB0STAT &= ~UCNACKIFG;
 
-        /* Set the error code */
+        // Set the error code
         err = -1;
     }
 

@@ -266,6 +266,7 @@ f = open("font.txt", "w")
 for symbol in symbols:
     # Iterate over hex values in the symbol
     for val in symbol:
+        print "{}".format(hex(val)),
         # print hex(val)
         #Iterate over the bits in the hex value
         symbolBit = 0x80

@@ -22,6 +22,7 @@ static const unsigned char config18[] = {0x3C, 0xAF };             // Display ON
 static const unsigned char config19[] = {0x3C, 0x21, 0x00, 0x7F }; // Set column address; start 0, end 127
 static const unsigned char config20[] = {0x3C, 0x22, 0x00, 0x07 }; // Set row address; start 0, end 7
 static const unsigned char config21[] = {0x3C, 0xAF };             // Display ON
+
 static const unsigned char config22[] = {0x3C, 0x21, 0x00, 0x7F};             // Display ON
 static const unsigned char config23[] = {0x3C, 0x22, 0x00, 0x07};             // Display ON
 static const unsigned char config24[] = {0x40, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };

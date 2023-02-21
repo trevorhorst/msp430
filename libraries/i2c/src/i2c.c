@@ -114,7 +114,7 @@ int i2c_init(void)
     UCB0BR0 = 10;
     UCB0BR1 = 0;
 
-    /* Take USCI_B0 out of reset and source clock from SMCLK */
+    // Take USCI_B0 out of reset and source clock from SMCLK
     UCB0CTL1 = UCSSEL_2;
 
     return 0;

@@ -6,12 +6,14 @@ set( SOURCE ${SOURCE}
     src/font.s
     src/i2c.c
     src/ssd1306.c
+    src/ring_buffer.c
     )
 
 set( INCLUDE ${INCLUDE}
     include/common/resources.h
     include/common/i2c.h
     include/common/ssd1306.h
+    include/common/ring_buffer.h
     )
 
 add_library( ${PROJECT_NAME} STATIC ${SOURCE} ${INCLUDE} )
