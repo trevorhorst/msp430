@@ -1,4 +1,4 @@
-#include "common/ring_buffer.h"
+#include "core/ring_buffer.h"
 
 #define RING_BUFFER_MAX  1
 

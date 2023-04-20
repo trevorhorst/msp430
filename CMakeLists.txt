@@ -1,11 +1,15 @@
 cmake_minimum_required(VERSION 2.8)
 
-# Add compiler options
+# Add compiler options, this needs to be setup before the project call
 set( CMAKE_C_FLAGS
-    "${CMAKE_C_FLAGS} -mmcu=msp430g2553 -0g -Wall -g -std=c99"
-    )   
+    "${CMAKE_C_FLAGS} -mmcu=msp430g2553 -std=c99"
+    )
 
-project(msp430 LANGUAGES C ASM)
+project(
+    msp430
+    DESCRIPTION "MSP430 Project"
+    LANGUAGES C ASM
+    )
 
 if(DEFINED ENV{TARGET_PROJECT})
     set( TARGET_PROJECT "$ENV{TARGET_PROJECT}" )
@@ -16,7 +20,7 @@ endif()
 message("Building ${TARGET_PROJECT}")
 
 add_subdirectory(app)
-add_subdirectory(common)
+add_subdirectory(core)
 add_subdirectory(projects/${TARGET_PROJECT})
 
 if( USE_I2C )

@@ -1,6 +1,6 @@
 #include "project/project.h"
 
-#include "common/resources.h"
+#include "core/resources.h"
 
 #define ERROR_LED   BIT2
 

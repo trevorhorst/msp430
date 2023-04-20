@@ -11,24 +11,24 @@ option( USE_SSD1306 "Use optional SSD1306 library" ON )
 set( SOURCE
     ${SOURCE}
     src/project.c
-    )   
+    )
 
 # List of header files
 set( HEADERS
     ${HEADERS}
     include/project/project.h
-    )   
+    )
 
 add_library(
     ${PROJECT_NAME} STATIC
     ${SOURCE}
     ${HEADERS}
-    )   
+    )
 
 target_link_libraries(
     ${PROJECT_NAME}
     PRIVATE
-    common
+    core
     uart
     ssd1306
     )

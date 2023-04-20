@@ -1,22 +1,31 @@
 cmake_minimum_required(VERSION 3.5)
 
-project(common LANGUAGES C ASM )
+project(
+    core 
+    VERSION 0.0.1
+    LANGUAGES C ASM
+    )
 
-set( SOURCE ${SOURCE}
+set(SOURCE ${SOURCE}
     src/font.s
     src/i2c.c
     src/ssd1306.c
     src/ring_buffer.c
     )
 
-set( INCLUDE ${INCLUDE}
-    include/common/resources.h
-    include/common/i2c.h
-    include/common/ssd1306.h
-    include/common/ring_buffer.h
+set(INCLUDE ${INCLUDE}
+    include/core/resources.h
+    include/core/i2c.h
+    include/core/ssd1306.h
+    include/core/ring_buffer.h
     )
 
-add_library( ${PROJECT_NAME} STATIC ${SOURCE} ${INCLUDE} )
+add_library( 
+    ${PROJECT_NAME} 
+    STATIC 
+        ${SOURCE} 
+        ${INCLUDE}
+    )
 
 target_link_libraries(
     ${PROJECT_NAME}

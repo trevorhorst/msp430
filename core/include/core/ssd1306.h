@@ -1,7 +1,7 @@
 #ifndef SSD1306_H
 #define SSD1306_H
 
-#include "common/i2c.h"
+#include "core/i2c.h"
 
 void ssd1306_init( struct i2c_device *dev );
 void ssd1306_write_char( const struct i2c_device *dev, struct i2c_data *data );
