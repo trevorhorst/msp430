@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.5)
 
 # Add compiler options, this needs to be setup before the project call
 set( CMAKE_C_FLAGS
@@ -19,9 +19,20 @@ else()
 endif()
 message("Building ${TARGET_PROJECT}")
 
+if(DEFINED ENV{TARGET_HWLIB})
+    set( TARGET_HWLIB "$ENV{TARGET_HWLIB}" )
+else()
+    message("No hwlib set.")
+endif()
+
 add_subdirectory(app)
-add_subdirectory(core)
 add_subdirectory(projects/${TARGET_PROJECT})
+add_subdirectory(core)
+add_subdirectory(hwlib/${TARGET_HWLIB})
+
+if( USE_GPIO )
+    message( "Using GPIO Library" )
+endif()
 
 if( USE_I2C )
     message( "Using I2C Library" )

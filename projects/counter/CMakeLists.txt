@@ -23,7 +23,7 @@ add_library(
 target_link_libraries(
     ${PROJECT_NAME}
     PRIVATE
-        common
+        core
     )
 
 target_include_directories(

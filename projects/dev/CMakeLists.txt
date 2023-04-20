@@ -1,8 +1,12 @@
-cmake_minimum_required( VERSION 2.8 )
+cmake_minimum_required( VERSION 3.5 )
 project(
-    blink
+    dev
+    DESCRIPTION "Development project sandbox"
+    VERSION 0.0.1
     LANGUAGES C ASM
     )
+
+option(USE_GPIO "Enable GPIO Library" ON)
 
 set( SOURCE
     ${SOURCE}
@@ -15,9 +19,10 @@ set( HEADERS
     )
 
 add_library(
-    ${PROJECT_NAME} STATIC
-    ${SOURCE}
-    ${HEADERS}
+    ${PROJECT_NAME}
+    STATIC
+        ${SOURCE}
+        ${HEADERS}
     )
 
 target_link_libraries(
