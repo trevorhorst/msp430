@@ -2,6 +2,10 @@
 gcc-msp430 - available in standard Ubuntu repository - http://packages.ubuntu.com/gcc-msp430
 mspdebug - available in standard Ubuntu repository - http://packages.ubuntu.com/source/electronics/mspdebug
 
+# Building a binary
+1. source projects/<target>/settings.sh
+2. ./build.sh
+
 # Programming the MSP430G2553
 Attach the msp430 via serial
 Run 'mspdebug rf2500'
