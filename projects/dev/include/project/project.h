@@ -4,8 +4,6 @@
 #include <msp430g2553.h>
 #include <stdint.h>
 
-#include "core/gpio.h"
-
-int run( void );
+int run(void);
 
 #endif // PROJECT_BLINK_H

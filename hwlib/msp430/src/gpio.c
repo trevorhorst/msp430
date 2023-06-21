@@ -2,6 +2,16 @@
 
 #include "hwlib/gpio.h"
 
+// const hw_gpio_function hw_gpio_p1[7][10] = {
+//     {{0, 0}, {1, 0}, {1, 0}, {0, 0}, {0, 0}, {0, 0}, {0, 0}, {0, 0}, {0, 0}, {0, 0}},
+//     {{0, 0}, {0, 0}, {0, 0}, {0, 0}, {0, 0}, {0, 0}, {0, 0}, {0, 0}, {0, 0}, {0, 0}},
+//     {{0, 0}, {0, 0}, {0, 0}, {0, 0}, {0, 0}, {0, 0}, {0, 0}, {0, 0}, {0, 0}, {0, 0}},
+//     {{0, 0}, {0, 0}, {0, 0}, {0, 0}, {0, 0}, {0, 0}, {0, 0}, {0, 0}, {0, 0}, {0, 0}},
+//     {{0, 0}, {0, 0}, {0, 0}, {0, 0}, {0, 0}, {0, 0}, {0, 0}, {0, 0}, {0, 0}, {0, 0}},
+//     {{0, 0}, {0, 0}, {0, 0}, {0, 0}, {0, 0}, {0, 0}, {0, 0}, {0, 0}, {0, 0}, {0, 0}},
+//     {{0, 0}, {0, 0}, {0, 0}, {0, 0}, {0, 0}, {0, 0}, {0, 0}, {0, 0}, {0, 0}, {0, 0}},
+// };
+
 void hw_gpio_set_out(unsigned int bank, unsigned int pin, unsigned char value)
 {
     volatile unsigned char *b = 0;
@@ -28,6 +38,13 @@ void hw_gpio_set_direction(unsigned int bank, unsigned int pin, unsigned char va
     if(b) {
         value ? (*b |= (1 << pin)) : (*b &= ~(1 << pin));
     }
+}
+
+void hw_gpio_set_function(unsigned int bank, unsigned int pin, unsigned char value)
+{
+    (void)bank;
+    (void)pin;
+    (void)value;
 }
 
 void hw_gpio_set_value(unsigned int bank, unsigned int pin, unsigned char value)
