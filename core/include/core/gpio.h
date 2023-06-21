@@ -8,7 +8,7 @@ typedef enum {
 
 typedef enum {
     GPIO_OUT_LOW    = 0,
-    GPIO_OUT_HIGH   =1
+    GPIO_OUT_HIGH   = 1
 } gpio_out;
 
 typedef enum gpio_function_t {
