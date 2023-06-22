@@ -2,6 +2,7 @@
 #define I2C_H
 
 #include <msp430g2553.h>
+#include <stdint.h>
 
 // static int TXByteCtr;
 // static unsigned char PRxData;
@@ -30,6 +31,9 @@ struct i2c_data
 int i2c_check_ack( const struct i2c_device *dev );
 int i2c_init( void );
 int i2c_transfer( const struct i2c_device *dev, struct i2c_data *data );
+
+int32_t i2c_initialize(uint8_t bus);
+int32_t i2c_write(uint8_t bus, uint8_t address, const uint8_t *data, uint32_t n);
 
 //static int _receive(const struct i2c_device *dev, uint8_t *buf, size_t nbytes)
 //{

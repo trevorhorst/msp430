@@ -58,51 +58,80 @@ static struct i2c_data data25 = {9, &config25};
 
 void ssd1306_init( struct i2c_device *dev )
 {
-    i2c_transfer( dev, &data);
+    // i2c_transfer( dev, &data);
+    // for(volatile unsigned int i = 25000; i > 0; i--);
+    // i2c_transfer( dev, &data1);
+    // i2c_transfer( dev, &data2);
+    // i2c_transfer( dev, &data3);
+    // i2c_transfer( dev, &data4);
+    // i2c_transfer( dev, &data5);
+    // i2c_transfer( dev, &data6);
+    // i2c_transfer( dev, &data7);
+    // i2c_transfer( dev, &data8);
+    // i2c_transfer( dev, &data9);
+    // i2c_transfer( dev, &data10);
+    // i2c_transfer( dev, &data11);
+    // i2c_transfer( dev, &data12);
+    // i2c_transfer( dev, &data13);
+    // i2c_transfer( dev, &data14);
+    // i2c_transfer( dev, &data15);
+    // i2c_transfer( dev, &data16);
+    // i2c_transfer( dev, &data17);
+    // i2c_transfer( dev, &data18);
+    // i2c_transfer( dev, &data19);
+    // i2c_transfer( dev, &data20);
+    // i2c_transfer( dev, &data21);
+
+
+    i2c_write(0, dev->address, data.tx_buf, data.tx_len);
     for(volatile unsigned int i = 25000; i > 0; i--);
-    i2c_transfer( dev, &data1);
-    i2c_transfer( dev, &data2);
-    i2c_transfer( dev, &data3);
-    i2c_transfer( dev, &data4);
-    i2c_transfer( dev, &data5);
-    i2c_transfer( dev, &data6);
-    i2c_transfer( dev, &data7);
-    i2c_transfer( dev, &data8);
-    i2c_transfer( dev, &data9);
-    i2c_transfer( dev, &data10);
-    i2c_transfer( dev, &data11);
-    i2c_transfer( dev, &data12);
-    i2c_transfer( dev, &data13);
-    i2c_transfer( dev, &data14);
-    i2c_transfer( dev, &data15);
-    i2c_transfer( dev, &data16);
-    i2c_transfer( dev, &data17);
-    i2c_transfer( dev, &data18);
-    i2c_transfer( dev, &data19);
-    i2c_transfer( dev, &data20);
-    i2c_transfer( dev, &data21);
-
-
+    i2c_write(0, dev->address, data1.tx_buf, data1.tx_len);
+    i2c_write(0, dev->address, data2.tx_buf, data2.tx_len);
+    i2c_write(0, dev->address, data3.tx_buf, data3.tx_len);
+    i2c_write(0, dev->address, data4.tx_buf, data4.tx_len);
+    i2c_write(0, dev->address, data5.tx_buf, data5.tx_len);
+    i2c_write(0, dev->address, data6.tx_buf, data6.tx_len);
+    i2c_write(0, dev->address, data7.tx_buf, data7.tx_len);
+    i2c_write(0, dev->address, data8.tx_buf, data8.tx_len);
+    i2c_write(0, dev->address, data9.tx_buf, data9.tx_len);
+    i2c_write(0, dev->address, data10.tx_buf, data10.tx_len);
+    i2c_write(0, dev->address, data11.tx_buf, data11.tx_len);
+    i2c_write(0, dev->address, data12.tx_buf, data12.tx_len);
+    i2c_write(0, dev->address, data13.tx_buf, data13.tx_len);
+    i2c_write(0, dev->address, data14.tx_buf, data14.tx_len);
+    i2c_write(0, dev->address, data15.tx_buf, data15.tx_len);
+    i2c_write(0, dev->address, data16.tx_buf, data16.tx_len);
+    i2c_write(0, dev->address, data17.tx_buf, data17.tx_len);
+    i2c_write(0, dev->address, data18.tx_buf, data18.tx_len);
+    i2c_write(0, dev->address, data19.tx_buf, data19.tx_len);
+    i2c_write(0, dev->address, data20.tx_buf, data20.tx_len);
+    i2c_write(0, dev->address, data21.tx_buf, data21.tx_len);
 }
 
 void ssd1306_write_char( const struct i2c_device *dev, struct i2c_data *data )
 {
-    i2c_transfer( dev, data );
+    // i2c_transfer( dev, data );
+    i2c_write(0, dev->address, data->tx_buf, data->tx_len );
 }
 
 void ssd1306_reset_cursor( const struct i2c_device *dev )
 {
+    // // Reset column address; start 0 end 127
+    // i2c_transfer( dev, &data22 );
+    // // Set row address; start 0 end 7
+    // i2c_transfer( dev, &data23 );
     // Reset column address; start 0 end 127
-    i2c_transfer( dev, &data22 );
+    i2c_write(0, dev->address, data22.tx_buf, data22.tx_len);
     // Set row address; start 0 end 7
-    i2c_transfer( dev, &data23 );
+    i2c_write(0, dev->address, data23.tx_buf, data23.tx_len);
 }
 
 void ssd1306_fill_screen( const struct i2c_device *dev )
 {
     for( unsigned int i = 0; i < 8; i++ ) {
         for( unsigned int j = 0; j < 16; j++ ) {
-            i2c_transfer(dev, &data25);
+            // i2c_transfer(dev, &data25);
+            i2c_write(0, dev->address, data25.tx_buf, data25.tx_len);
         }
     }
 }
@@ -111,7 +140,8 @@ void ssd1306_clear_screen( const struct i2c_device *dev )
 {
     for( unsigned int i = 0; i < 8; i++ ) {
         for( unsigned int j = 0; j < 16; j++ ) {
-            i2c_transfer(dev, &data24);
+            // i2c_transfer(dev, &data24);
+            i2c_write(0, dev->address, data24.tx_buf, data24.tx_len);
         }
     }
 }

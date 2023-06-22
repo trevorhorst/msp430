@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.5)
 
 project(
     hwlib
-    VERSION 0.0.1
+    VERSION 0.0.2
     DESCRIPTION "Hardware Library"
     LANGUAGES C ASM
     )
@@ -10,11 +10,13 @@ project(
 set(
     INCLUDE ${INCLUDE}
     include/hwlib/gpio.h
+    include/hwlib/i2c.h
     )
 
 set(
     SOURCE ${SOURCE}
     src/gpio.c
+    src/i2c.c
     )
 
 add_library(

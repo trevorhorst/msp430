@@ -1,4 +1,5 @@
 #include "core/i2c.h"
+#include "hwlib/i2c.h"
 
 static int _transmit(
         const struct i2c_device *dev
@@ -95,4 +96,14 @@ int i2c_transfer(const struct i2c_device *dev, struct i2c_data *data)
     // }
 
     return err;
+}
+
+int32_t i2c_initialize(uint8_t bus)
+{
+    return hw_i2c_initialize(bus);
+}
+
+int32_t i2c_write(uint8_t bus, uint8_t address, const uint8_t *data, uint32_t n)
+{
+    return hw_i2c_write(bus, address, data, n);
 }
