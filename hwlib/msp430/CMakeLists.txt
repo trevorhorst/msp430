@@ -11,12 +11,14 @@ set(
     INCLUDE ${INCLUDE}
     include/hwlib/gpio.h
     include/hwlib/i2c.h
+    include/hwlib/uart.h
     )
 
 set(
     SOURCE ${SOURCE}
     src/gpio.c
     src/i2c.c
+    src/uart.c
     )
 
 add_library(
