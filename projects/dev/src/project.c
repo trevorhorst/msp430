@@ -50,34 +50,12 @@ __interrupt void USCI0RX_ISR(void)
     P1OUT &= ~RXLED;
 }
 
-double ln(const double n, double euler) {
-    // Basic logarithm computation.
-    unsigned a = 0, d;
-    double b, c, e, f;
-    if (n > 0) {
-        for (c = n < 1 ? 1 / n : n; (c /= euler) > 1; ++a);
-        c = 1 / (c * euler - 1), c = c + c + 1, f = c * c, b = 0;
-        for (d = 1, c /= 2; e = b, b += 1 / (d * c), b - e/* > 0.0000001 */;)
-            d += 2, c *= f;
-    } else b = (n == 0) / 0.;
-    return n < 1 ? -(a + b) : a + b;
-}
-
-double log_n(double x, double n, double epsilon)
-{
-    return ln(x, epsilon) / ln(n, epsilon);
-}
-
-double log(double x)
-{
-    return ln(x, EPSILON) / 2.302585093;
-}
-
-double log_fractional(double x)
-{
-    return -8.6731532 + (129.946172 + (-558.971892 + (843.967330 - 409.109529 * x) * x) * x) * x;
-}
-
+/**
+ * @brief Base 2 logarithm implementation
+ * https://stackoverflow.com/questions/9411823/fast-log2float-x-implementation-c
+ * @param val Input value
+ * @return float log2(x) approximation
+ */
 float fast_log2(float val) {
     union { float val; int32_t x; } u = { val };
     register float log_2 = (float)(((u.x >> 23) & 255) - 128);
@@ -88,11 +66,23 @@ float fast_log2(float val) {
     return (log_2);
 }
 
+/**
+ * @brief Base 10 logarithm implementation
+ * @param val Input value
+ * @return float log10(x) approximation
+ */
 float fast_log(float val)
 {
    return (fast_log2 (val) * 0.69314718f);
 }
 
+/**
+ * @brief Calculates dew point in degrees Celsius (Magnus-Tetons formula). Allows
+ * calculations for values between -40C and 60C with an uncertainty of 0.35C.
+ * @param temp Temperature in degrees celsius
+ * @param rh Relative humidity (percentage)
+ * @return float dew point approximation
+ */
 float calculate_dew_point(float temp, float rh)
 {
     float a = 17.27;
@@ -106,15 +96,25 @@ float calculate_frost_point(float temp, float dew_point)
 {
     float dewpoint_k = 273.15 + dew_point;
     float temp_k = 273.15 + temp;
-    float frostpoint_k = dewpoint_k - temp_k + 2671.02 / ((2954.61 / temp_k) + 2.193665 * log(temp_k) - 13.3448);
+    float frostpoint_k = dewpoint_k - temp_k + 2671.02 / ((2954.61 / temp_k) + 2.193665 * fast_log(temp_k) - 13.3448);
     return frostpoint_k - 273.15;
 }
 
+/**
+ * @brief Convers degrees celsius to degrees farenheit
+ * @param temp Temperature in degrees celsius
+ * @return float temperature in degrees farenheit
+ */
 float convert_celsius_to_farenheit(float temp)
 {
     return ((9 * temp) / 5) + 32;
 }
 
+/**
+ * @brief Converts degrees farenheit to degrees celsius
+ * @param temp Temperature in degrees farenheit
+ * @return float temperature in degrees celsius
+ */
 float convert_farenheit_to_celsius(float temp)
 {
     return (5 * (temp - 32)) / 9;
@@ -156,33 +156,6 @@ int run(void)
     // P1SEL  |= BIT6 + BIT7;
     // P1SEL2 |= BIT6 + BIT7;
 
-    // i2c_init();
-    // // The I2C display is located at address 0x3C
-    // struct i2c_device ssd1306 = { 0x3C };
-
-    // // Clear any remnants that might be on the screen
-    // ssd1306_clear_screen( &ssd1306 );
-
-    // for(volatile unsigned int i = 32000; i > 0; i--);
-
-    // // Initialize display
-    // ssd1306_init( &ssd1306 );
-
-    // // Reset cursor to the 0,0 position
-    // ssd1306_reset_cursor( &ssd1306 );
-
-    // // Fills the screen, to the let user know everything is ready
-    // ssd1306_fill_screen( &ssd1306 );
-
-    // while(1) {
-    //     // Toggle pin 0 on port 1
-    //     // gpio_toggle_out(0, 6);
-    //     gpio_toggle_out(0, 0);
-
-    //     // Use loop as a wait
-    //     for(uint16_t i = 0; i < LOOP_COUNTER; i++);
-    // }
-
     // Configure the pinmux
     P2DIR |= 0xFF; // All P2.x outputs
     P2OUT &= 0x00; // All P2.x reset
@@ -205,6 +178,7 @@ int run(void)
 
     // Initialize the I2C
     i2c_initialize(0);
+
     // // The I2C display is located at address 0x3C
     // struct i2c_device ssd1306 = { 0x3C };
 
@@ -222,7 +196,6 @@ int run(void)
     // // Fills the screen, to the let user know everything is ready
     // ssd1306_fill_screen( &ssd1306 );
 
-
     // Configure LPM0 and the Global Interrupt Enable
     _BIS_SR(/*LPM0_bits +*/ GIE);
 
@@ -231,14 +204,6 @@ int run(void)
     char t[20];
 
     puts("Welcome to the MSP430!\r");
-
-    // // Testing the log function
-    // double value = 25.64;
-    // double result = log(value);
-    // num n = split_float(value, 2);
-    // num r = split_float(result, 4);
-    // snprintf(t, sizeof(t), "LOG(%d.%d) = %d.%d\r", n.whole, n.frac, r.whole, r.frac);
-    // puts(t);
 
     // Loop infinitely
     while(1) {
@@ -252,20 +217,24 @@ int run(void)
         float dp     = calculate_dew_point(temp_c, rh);
         // float dp_f   = convert_celsius_to_farenheit(dp);
 
+        // Print temperature data to console
         num n = split_float(temp_c, 2);
-        snprintf(t, sizeof(t), " T: %d.%dC\r", n.whole, n.frac);
+        snprintf(t, sizeof(t), " T: %d.%02dC\r", n.whole, n.frac);
         puts(t);
 
+        // Print relative humnidity to console
         num r = split_float(rh, 2);
-        snprintf(t, sizeof(t), "RH: %d.%d%%\r", r.whole, r.frac);
+        snprintf(t, sizeof(t), "RH: %d.%02d%%\r", r.whole, r.frac);
         puts(t);
 
+        // Print dew point to console
         num d = split_float(dp, 2);
-        snprintf(t, sizeof(t), "DP: %d.%dC\r\n", d.whole, d.frac);
+        snprintf(t, sizeof(t), "DP: %d.%02dC\r\n", d.whole, d.frac);
         puts(t);
 
         puts("\r");
 
+        // Sleep for ~1 second
         for(int i = 0; i < INT16_MAX; i++);
     }
 
@@ -281,22 +250,3 @@ int putchar(int c)
     }
     return error;
 }
-
-//-----------------------------------------------------------------------//
-//                Transmit and Receive interrupts                        //
-//-----------------------------------------------------------------------//
-//
-// #pragma vector = USCIAB0TX_VECTOR
-// __interrupt void TransmitInterrupt(void)
-// {
-//   P1OUT  ^= BIT0;//light up P1.0 Led on Tx
-// }
-//
-// #pragma vector = USCIAB0RX_VECTOR
-// __interrupt void ReceiveInterrupt(void)
-// {
-//   P1OUT  ^= BIT6;     // light up P1.6 LED on RX
-//   IFG2 &= ~UCA0RXIFG; // Clear RX flag
-// }
-
-

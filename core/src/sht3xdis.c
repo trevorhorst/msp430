@@ -84,7 +84,7 @@ sht3xdis_measurement sht3xdis_singleshot_measurement(sht3xdis_i2c_device *device
     sht3xdis_write(device, command, sizeof(command));
 
     // These should be roughly equivalent
-    for(int i = 0; i < 32000; i++);
+    for(int i = 0; i < INT16_MAX; i++);
     // sleep_ms(1000);
     uint8_t response[6];
     sht3xdis_read(device, response, sizeof(response));

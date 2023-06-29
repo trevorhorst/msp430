@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.5)
 
 project(
     hwlib
-    VERSION 0.0.3
+    VERSION 0.0.4
     DESCRIPTION "Hardware Library"
     LANGUAGES C ASM
     )
