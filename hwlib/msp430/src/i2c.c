@@ -4,7 +4,7 @@ int32_t _check_ack(void)
 {
     int32_t error = 0;
     /* Check for ACK */
-    if( UCB0STAT & UCNACKIFG ) {
+    if(UCB0STAT & UCNACKIFG) {
         // Stop the I2C transmission
         UCB0CTL1 |= UCTXSTP;
 
@@ -77,6 +77,49 @@ int32_t hw_i2c_write(uint8_t bus, uint8_t address, const uint8_t *data, uint32_t
 
             data++;
             n--;
+        }
+    }
+
+    return error;
+}
+
+int32_t hw_i2c_read(uint8_t bus, uint8_t address, uint8_t *data, uint32_t n)
+{
+    int32_t error = 0;
+
+    /* Send the start and wait */
+    UCB0CTL1 &= ~UCTR;
+    UCB0CTL1 |= UCTXSTT;
+
+    /* Wait for the start condition to be sent */
+    while (UCB0CTL1 & UCTXSTT);
+
+    /*
+     * If there is only one byte to receive, then set the stop
+     * bit as soon as start condition has been sent
+     */
+    if(n == 1) {
+        UCB0CTL1 |= UCTXSTP;
+    }
+
+    /* Check for ACK */
+    error = _check_ack();
+
+    /* If no error and bytes left to receive, receive the data */
+    while((error == 0) && (n > 0)) {
+        /* Wait for the data */
+        while((IFG2 & UCB0RXIFG) == 0);
+
+        *data = UCB0RXBUF;
+        data++;
+        n--;
+
+        /*
+         * If there is only one byte left to receive
+         * send the stop condition
+         */
+        if(n == 1) {
+            UCB0CTL1 |= UCTXSTP;
         }
     }
 

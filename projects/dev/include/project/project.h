@@ -4,6 +4,7 @@
 #include <msp430g2553.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <string.h>
 
 int run(void);
 

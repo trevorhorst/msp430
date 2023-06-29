@@ -107,3 +107,8 @@ int32_t i2c_write(uint8_t bus, uint8_t address, const uint8_t *data, uint32_t n)
 {
     return hw_i2c_write(bus, address, data, n);
 }
+
+int32_t i2c_read(uint8_t bus, uint8_t address, uint8_t *data, uint32_t n)
+{
+    return hw_i2c_read(bus, address, data, n);
+}
