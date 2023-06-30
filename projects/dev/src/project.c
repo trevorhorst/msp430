@@ -1,6 +1,6 @@
 #include "core/uart.h"
 #include "core/i2c.h"
-// #include "core/gpio.h"
+#include "core/gpio.h"
 #include "core/ssd1306.h"
 #include "core/sht3xdis.h"
 
@@ -48,6 +48,11 @@ __interrupt void USCI0RX_ISR(void)
     // Toggle LED to indicate received character
     P1OUT |= RXLED;
     P1OUT &= ~RXLED;
+}
+
+const char *getSymbol( char symbol )
+{
+    return &font_txt[ (int)( symbol * SYMBOL_LENGTH ) ];
 }
 
 /**
@@ -138,6 +143,28 @@ num split_float(float value, int8_t precision)
     return n;
 }
 
+void write_symbol_to_screen( struct i2c_device *dev, const unsigned char val )
+{
+    unsigned char map[9];
+    memset( &map, 0, 9 );
+    const char *symbol = getSymbol( (char)(val) );
+    map[0] = 0x40;
+    memcpy( &map[1], symbol, SYMBOL_LENGTH );
+    struct i2c_data data = { 9, &map };
+    ssd1306_write_char( dev, &data );
+}
+
+void write_string_to_screen( struct i2c_device *dev, const char *str )
+{
+    for(unsigned int i = 0; i < strlen( str ); i++ ) {
+        if(str[i] == '\r') {
+            // Break at carriage return
+            break;
+        } else {
+            write_symbol_to_screen( dev, (unsigned char)str[ i ] );
+        }
+    }
+}
 
 int run(void)
 {
@@ -157,8 +184,15 @@ int run(void)
     // P1SEL2 |= BIT6 + BIT7;
 
     // Configure the pinmux
-    P2DIR |= 0xFF; // All P2.x outputs
-    P2OUT &= 0x00; // All P2.x reset
+    // P2DIR |= 0xFF; // All P2.x outputs
+    // P2OUT &= 0x00; // All P2.x reset
+
+    // Reset the temp sensor
+    gpio_set_direction(1, 5, GPIO_DIR_OUT);
+    gpio_set_out(1, 5, GPIO_OUT_HIGH);
+    for(int i = 0; i < INT16_MAX; i++);
+    gpio_set_out(1, 5, GPIO_OUT_LOW);
+
     P1SEL |= RXD + TXD ; // P1.1 = RXD, P1.2=TXD
     P1SEL2 |= RXD + TXD ; // P1.1 = RXD, P1.2=TXD
     P1DIR |= TXLED;
@@ -179,22 +213,24 @@ int run(void)
     // Initialize the I2C
     i2c_initialize(0);
 
-    // // The I2C display is located at address 0x3C
-    // struct i2c_device ssd1306 = { 0x3C };
+    // The I2C display is located at address 0x3C
+    struct i2c_device ssd1306 = { 0x3C };
 
-    // // Clear any remnants that might be on the screen
-    // ssd1306_clear_screen( &ssd1306 );
+    // Clear any remnants that might be on the screen
+    ssd1306_clear_screen( &ssd1306 );
 
-    // for(volatile unsigned int i = 32000; i > 0; i--);
+    for(volatile unsigned int i = 32000; i > 0; i--);
 
-    // // Initialize display
-    // ssd1306_init( &ssd1306 );
+    // Initialize display
+    ssd1306_init( &ssd1306 );
 
-    // // Reset cursor to the 0,0 position
-    // ssd1306_reset_cursor( &ssd1306 );
+    // Reset cursor to the 0,0 position
+    ssd1306_reset_cursor( &ssd1306 );
 
-    // // Fills the screen, to the let user know everything is ready
-    // ssd1306_fill_screen( &ssd1306 );
+    // Fills the screen, to the let user know everything is ready
+    ssd1306_fill_screen( &ssd1306 );
+    for(int i = 0; i < INT16_MAX; i++);
+    ssd1306_clear_screen(&ssd1306);
 
     // Configure LPM0 and the Global Interrupt Enable
     _BIS_SR(/*LPM0_bits +*/ GIE);
@@ -207,30 +243,34 @@ int run(void)
 
     // Loop infinitely
     while(1) {
-        // // puts("Hello\r\n");
+        ssd1306_reset_cursor( &ssd1306 );
+
         sht3xdis_measurement measurement = {0x00, 0x00};
         measurement = sht3xdis_singleshot_measurement(&ht_sensor, SHT3XDIS_REPEATABILITY_HIGH, 0x1);
 
         float temp_c = sht3xdis_convert_raw_to_celsius(measurement.raw_temperature);
-        // float temp_f = sht3xdis_convert_raw_to_farenheit(measurement.raw_temperature);
+        float temp_f = sht3xdis_convert_raw_to_farenheit(measurement.raw_temperature);
         float rh     = sht3xdis_convert_raw_to_relative_humidity(measurement.raw_relative_humidity);
         float dp     = calculate_dew_point(temp_c, rh);
-        // float dp_f   = convert_celsius_to_farenheit(dp);
+        float dp_f   = convert_celsius_to_farenheit(dp);
 
         // Print temperature data to console
-        num n = split_float(temp_c, 2);
-        snprintf(t, sizeof(t), " T: %d.%02dC\r", n.whole, n.frac);
+        num n = split_float(temp_f, 2);
+        snprintf(t, sizeof(t), "    T: %d.%02dF   \r", n.whole, n.frac);
         puts(t);
+        write_string_to_screen(&ssd1306, t);
 
         // Print relative humnidity to console
         num r = split_float(rh, 2);
-        snprintf(t, sizeof(t), "RH: %d.%02d%%\r", r.whole, r.frac);
+        snprintf(t, sizeof(t), "   RH: %d.%02d%%   \r", r.whole, r.frac);
         puts(t);
+        write_string_to_screen(&ssd1306, t);
 
         // Print dew point to console
-        num d = split_float(dp, 2);
-        snprintf(t, sizeof(t), "DP: %d.%02dC\r\n", d.whole, d.frac);
+        num d = split_float(dp_f, 2);
+        snprintf(t, sizeof(t), "   DP: %d.%02dF   \r\n", d.whole, d.frac);
         puts(t);
+        write_string_to_screen(&ssd1306, t);
 
         puts("\r");
 

@@ -2,7 +2,7 @@ cmake_minimum_required( VERSION 3.5 )
 project(
     dev
     DESCRIPTION "Development project sandbox"
-    VERSION 0.0.3
+    VERSION 0.1.0
     LANGUAGES C ASM
     )
 
@@ -11,6 +11,7 @@ option(USE_GPIO "Enable GPIO Library" ON)
 set( SOURCE
     ${SOURCE}
     src/project.c
+    src/font.txt.s
     )
 
 set( HEADERS
@@ -33,6 +34,7 @@ target_link_libraries(
 
 target_include_directories(
     ${PROJECT_NAME} PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/resources>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>
     )
