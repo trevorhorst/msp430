@@ -2,13 +2,14 @@ cmake_minimum_required(VERSION 3.5)
 
 project(
     hwlib
-    VERSION 0.0.4
+    VERSION 0.1.0
     DESCRIPTION "Hardware Library"
     LANGUAGES C ASM
     )
 
 set(
     INCLUDE ${INCLUDE}
+    include/hwlib/flash.h
     include/hwlib/gpio.h
     include/hwlib/i2c.h
     include/hwlib/uart.h
@@ -16,6 +17,7 @@ set(
 
 set(
     SOURCE ${SOURCE}
+    src/flash.c
     src/gpio.c
     src/i2c.c
     src/uart.c
