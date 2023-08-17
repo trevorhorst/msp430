@@ -1,3 +1,13 @@
+/**
+ * @file project.c
+ * @author Trevor Horst
+ * @brief Example project entry point
+ *
+ * This is an example project that demonstrates how to use the various features
+ * providded by the MSP430G2553. This includes how to use the GPIO, UART,
+ * interrupts and reading, writing and erasing the flash memory.
+ */
+
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -31,6 +41,7 @@ typedef uint8_t bool;
 static char console_buffer[CONSOLE_BUFFER_SIZE] = {0};
 static uint8_t console_cursor = 0;
 static bool command_ready = false;
+static uint16_t timer_counter = 0;
 
 typedef struct callback_t {
     const char *command;
@@ -93,6 +104,18 @@ __interrupt void USCI0RX_ISR(void)
     IFG2 &= ~UCA0RXIFG;
 
     gpio_set_out(LAUNCHPAD_PORT1, LAUNCHPAD_LED2, GPIO_OUT_LOW);
+}
+
+#pragma vector=TIMER0_A0_VECTOR
+__interrupt void TIMERA_ISR(void)
+{
+    timer_counter++;
+    if(timer_counter == 1000) {
+        // Triggers about once a second
+        gpio_set_direction(LAUNCHPAD_PORT1, LAUNCHPAD_LED1, GPIO_DIR_OUT);
+        gpio_toggle_out(LAUNCHPAD_PORT1, LAUNCHPAD_LED1);
+        timer_counter = 0;
+    }
 }
 
 uint16_t hex2int(char *hex) {
@@ -251,6 +274,10 @@ int run(void)
     // Stop the watch dog timer
     WDTCTL = WDTPW + WDTHOLD;
 
+    //Set MCLK = SMCLK = 1MHz
+    BCSCTL1 = CALBC1_1MHZ;
+    DCOCTL = CALDCO_1MHZ;
+
     // Configure LaunchPad UART pins. I don't have a core library method for this.
     P1SEL |= LAUNCHPAD_UART_RX + LAUNCHPAD_UART_TX;
     P1SEL2 |= LAUNCHPAD_UART_RX + LAUNCHPAD_UART_TX;
@@ -259,24 +286,32 @@ int run(void)
     uart_initialize(UART_BAUD_9600);
     UC0IE |= UCA0RXIE; // Enable USCI_A0 RX interrupt
     // UC0IE |= UCA0TXIE; // Enable USCI_A0 TX interrupt
+
+    // Initialize a timer
+    TACCR0 =  0;
+    TACCTL0 = CCIE;                             // CCR0 interrupt enabled
+    TACTL = TASSEL_2 + MC_1 + ID_0;           // SMCLK/8, upmode
+
     // Configure LPM0 and the Global Interrupt Enable
     _BIS_SR(/*LPM0_bits +*/ GIE);
 
-    // Enable pin 0 on port 1
-    gpio_set_direction(LAUNCHPAD_PORT1, LAUNCHPAD_LED1, GPIO_DIR_OUT);
-
     puts("Welcome to the MSP430G2553 LaunchPad!\r");
 
+    TACCR0 = 999;
+    uint8_t counter = 0;
+    uint16_t heartbeat = 4096;
     while(1) {
         if(command_ready) {
+            // Always check for a command
             handle_command();
         }
 
-        // Toggle pin 0 on port 1
-        gpio_toggle_out(LAUNCHPAD_PORT1, LAUNCHPAD_LED1);
-
         // Use loop as a wait
-        for(uint16_t i = 0; i < UINT8_MAX; i++);
+        for(uint16_t i = 0; i < heartbeat; i++);
+
+        // Increment heartbeat counter
+        counter++;
+        counter &= 0x0F;
     }
 
     return 0;
