@@ -12,6 +12,7 @@ set(
     include/hwlib/flash.h
     include/hwlib/gpio.h
     include/hwlib/i2c.h
+    include/hwlib/timer.h
     include/hwlib/uart.h
     )
 
@@ -20,6 +21,7 @@ set(
     src/flash.c
     src/gpio.c
     src/i2c.c
+    src/timer.c
     src/uart.c
     )
 

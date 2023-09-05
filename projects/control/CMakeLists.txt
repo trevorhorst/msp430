@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.5)
 project(
     control
+    VERSION 0.1.0
+    DESCRIPTION "Example control library for the MSP430 Launch Pad"
     LANGUAGES C ASM
     )
 
