@@ -2,6 +2,7 @@
 
 export TARGET_PROJECT="blink"
 
+export TARGET_HWLIB=msp430
 
 export CC=msp430-gcc
 export CXX=msp430-g++

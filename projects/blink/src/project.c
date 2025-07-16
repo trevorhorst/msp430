@@ -5,10 +5,12 @@
 int run( void )
 {
     // Enable pin 0 on port 1
+    P1DIR |= BIT6;
     P1DIR |= BIT0;
 
     while( 1 ) {
         // Toggle pin 0 on port 1
+        P1OUT ^= BIT6;
         P1OUT ^= BIT0;
 
         // Use loop as a wait
