@@ -81,6 +81,8 @@ __interrupt void USCI0RX_ISR(void)
         printf("\r%s\r\n", console_buffer);
         console_buffer[console_cursor] = '\0';
         command_ready = true;
+        // Re-enable the CPU so it can handle the command
+        LPM1_EXIT;
     } else if(to_buffer == '\b') {
         if(console_cursor > 0) {
             console_cursor--;
@@ -110,7 +112,7 @@ __interrupt void USCI0RX_ISR(void)
 __interrupt void TIMERA_ISR(void)
 {
     timer_counter++;
-    if(timer_counter == 1000) {
+    if(timer_counter == 100) {
         // Triggers about once a second
         gpio_set_direction(LAUNCHPAD_PORT1, LAUNCHPAD_LED1, GPIO_DIR_OUT);
         gpio_toggle_out(LAUNCHPAD_PORT1, LAUNCHPAD_LED1);
@@ -256,11 +258,6 @@ void handle_command()
             command_map[i].call(arguments, parsed);
         }
     }
-    // for(uint8_t i = 0; i < CONSOLE_CMD_ARGS_MAX; i++) {
-    //     if(parsed[i] != NULL) {
-    //         printf("%d: %s\r\n", i, parsed[i]);
-    //     }
-    // }
 
     puts("Handle end\r");
 
@@ -274,7 +271,7 @@ int run(void)
     // Stop the watch dog timer
     WDTCTL = WDTPW + WDTHOLD;
 
-    //Set MCLK = SMCLK = 1MHz
+    // Set MCLK = SMCLK = 1MHz
     BCSCTL1 = CALBC1_1MHZ;
     DCOCTL = CALDCO_1MHZ;
 
@@ -288,30 +285,27 @@ int run(void)
     // UC0IE |= UCA0TXIE; // Enable USCI_A0 TX interrupt
 
     // Initialize a timer
-    TACCR0 =  0;
-    TACCTL0 = CCIE;                             // CCR0 interrupt enabled
-    TACTL = TASSEL_2 + MC_1 + ID_0;           // SMCLK/8, upmode
+    TA0CCR0 =  0;
+    TA0CCTL0 = CCIE;                             // CCR0 interrupt enabled
+    TA0CTL = TASSEL_2 + MC_1 + ID_0;           // SMCLK/8, upmode
 
-    // Configure LPM0 and the Global Interrupt Enable
-    _BIS_SR(/*LPM0_bits +*/ GIE);
-
+    // Print the welcome text
     puts("Welcome to the MSP430G2553 LaunchPad!\r");
 
-    TACCR0 = 999;
-    uint8_t counter = 0;
-    uint16_t heartbeat = 4096;
+    // Global Interrupt Enable
+    _BIS_SR(GIE);
+
+    // Start the heartbeat timer
+    TACCR0 = 9999;
+
     while(1) {
         if(command_ready) {
             // Always check for a command
             handle_command();
+        } else {
+            // If no command is ready, enter Low Power Mode 1
+            LPM1;
         }
-
-        // Use loop as a wait
-        for(uint16_t i = 0; i < heartbeat; i++);
-
-        // Increment heartbeat counter
-        counter++;
-        counter &= 0x0F;
     }
 
     return 0;
