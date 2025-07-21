@@ -100,7 +100,7 @@ unsigned char hw_gpio_get_input(unsigned int bank, unsigned int pin)
     } else if(bank == 1){
         b = &P2IN;
     }
-    return b ? (*b & pin) : 0;
+    return b ? (*b & (1 << pin)) : 0;
 }
 
 void hw_gpio_toggle_out(unsigned int bank, unsigned int pin)

@@ -21,9 +21,9 @@ void ssd1681_initialize_display(ssd1681_spi_device *device)
 
     ssd1681_write(device, SPI_WRITE_TYPE_COMMAND, SSD1681_COMMAND_SW_RESET);
 
-    //while(ssd1681_is_busy(device)) {
+    while(ssd1681_is_busy(device)) {
         __delay_cycles(160000 * 2);
-    //}
+    }
 
     // Init code
     ssd1681_write(device, SPI_WRITE_TYPE_COMMAND, SSD1681_COMMAND_DRIVER_OUTPUT);
@@ -58,11 +58,9 @@ void ssd1681_initialize_display(ssd1681_spi_device *device)
     ssd1681_write(device, SPI_WRITE_TYPE_DATA, 0xC7);
     ssd1681_write(device, SPI_WRITE_TYPE_DATA, 0x00);
 
-    //while(ssd1681_is_busy(device)) {
+    while(ssd1681_is_busy(device)) {
         __delay_cycles(160000);
-    //}
-
-    gpio_set_out(0, 6, GPIO_OUT_HIGH);
+    }
 
     __delay_cycles(160000 * 2);
 }
@@ -137,8 +135,8 @@ void ssd1681_fill_screen(ssd1681_spi_device *device, uint8_t byte)
     ssd1681_write(device, SPI_WRITE_TYPE_DATA, 0xF7);
     ssd1681_write(device, SPI_WRITE_TYPE_COMMAND, SSD1681_COMMAND_MASTER_ACTIVATION);  //Activate Display Update Sequence
 
-    // if(ssd1681_is_busy(device)) {
-    //     __delay_cycles(160000 * 1);
-    // }
-    __delay_cycles(160000 * 2);
+    if(ssd1681_is_busy(device)) {
+        __delay_cycles(160000 * 1);
+    }
+    //__delay_cycles(160000 * 2);
 }

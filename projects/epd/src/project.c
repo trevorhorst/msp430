@@ -78,7 +78,7 @@ int run( void )
     ssd1681_initialize_display(&epd);
 
     gpio_set_out(0, 6, GPIO_OUT_HIGH);
-    ssd1681_fill_screen(&epd, 0x00);
+    ssd1681_fill_screen(&epd, screen_byte);
     gpio_set_out(0, 6, GPIO_OUT_LOW);
 
     // Configure P1.3 for interrupt
