@@ -16,7 +16,17 @@ void gpio_set_function(unsigned int bank, unsigned pin, unsigned char function)
     hw_gpio_set_function(bank, pin, function);
 }
 
+void gpio_set_resistor(unsigned int bank, unsigned int pin, unsigned char enable, unsigned char type)
+{
+    hw_gpio_set_resistor(bank, pin, enable, type);
+}
+
 void gpio_toggle_out(unsigned int bank, unsigned int pin)
 {
     hw_gpio_toggle_out(bank, pin);
+}
+
+unsigned char gpio_get_input(unsigned int bank, unsigned int pin)
+{
+    return hw_gpio_get_input(bank, pin);
 }

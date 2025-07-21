@@ -25,6 +25,8 @@ typedef enum gpio_function_t {
 void gpio_set_out(unsigned int bank, unsigned int pin, gpio_out value);
 void gpio_set_direction(unsigned int bank, unsigned int pin, gpio_direction dir);
 void gpio_set_function(unsigned int bank, unsigned int pin, unsigned char function);
+void gpio_set_resistor(unsigned int bank, unsigned int pin, unsigned char enable, unsigned char type);
+unsigned char gpio_get_input(unsigned int bank, unsigned int pin);
 
 void gpio_toggle_out(unsigned int bank, unsigned int pin);
 

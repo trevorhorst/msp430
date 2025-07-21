@@ -7,6 +7,16 @@ project(
     LANGUAGES C ASM
     )
 
+if(USE_SPI)
+    set(EXTRA_SOURCE ${EXTRA_SOURCE}
+        src/spi.c
+    )
+
+    set(EXTRA_INCLUDE ${EXTRA_INCLUDE}
+        include/hwlib/spi.h
+    )
+endif()
+
 set(
     INCLUDE ${INCLUDE}
     include/hwlib/flash.h
@@ -14,6 +24,7 @@ set(
     include/hwlib/i2c.h
     include/hwlib/timer.h
     include/hwlib/uart.h
+    ${EXTRA_INCLUDE}
     )
 
 set(
@@ -23,6 +34,7 @@ set(
     src/i2c.c
     src/timer.c
     src/uart.c
+    ${EXTRA_SOURCE}
     )
 
 add_library(

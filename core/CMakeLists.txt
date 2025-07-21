@@ -16,6 +16,17 @@ if(USE_GPIO)
     )
 endif()
 
+if(USE_SPI)
+    set(EXTRA_SOURCE ${EXTRA_SOURCE}
+        src/spi.c
+    )
+
+    set(EXTRA_INCLUDE ${EXTRA_INCLUDE}
+        include/core/spi.h
+    )
+endif()
+
+
 set(SOURCE ${SOURCE}
     src/font.s
     src/i2c.c
@@ -23,6 +34,7 @@ set(SOURCE ${SOURCE}
     src/ssd1306.c
     src/ring_buffer.c
     src/sht3xdis.c
+    src/drivers/ssd1681.c
     ${EXTRA_SOURCE}
     )
 
@@ -33,6 +45,7 @@ set(INCLUDE ${INCLUDE}
     include/core/ssd1306.h
     include/core/ring_buffer.h
     include/core/sht3xdis.h
+    include/core/drivers/ssd1681.h
     ${EXTRA_INCLUDE}
     )
 
