@@ -19,6 +19,7 @@
 static ssd1681_spi_device epd;
 static uint8_t screen_byte = 0xFF;
 static uint8_t row = 0;
+static uint16_t counter = 0;
 
 static const uint8_t font[11][6] = {
     {0x3E, 0x51, 0x49, 0x45, 0x3E, 0x00}, //  0
@@ -100,22 +101,33 @@ int run( void )
 
     _BIS_SR(GIE);
 
-    gpio_set_out(0, 6, GPIO_OUT_HIGH);
-    for(uint8_t j = 0; j < 11; j++) {
-        for(int8_t i = 5; i >= 0; i--) {
-            ssd1681_set_cursor(&epd, 0, (5 - i) + (j * 6));
-            const uint8_t b = font[j][i];
-            ssd1681_write_buffer(&epd, &b, 1);
-        }
-    }
-    ssd1681_update_display(&epd);
-    gpio_set_out(0, 6, GPIO_OUT_LOW);
+    // gpio_set_out(0, 6, GPIO_OUT_HIGH);
+    // for(uint8_t j = 0; j < 11; j++) {
+    //     for(int8_t i = 5; i >= 0; i--) {
+    //         ssd1681_set_cursor(&epd, 0, (5 - i) + (j * 6));
+    //         const uint8_t b = font[j][i];
+    //         ssd1681_write_buffer(&epd, &b, 1);
+    //     }
+    // }
+    // ssd1681_update_display(&epd);
+    // gpio_set_out(0, 6, GPIO_OUT_LOW);
 
     while( 1 ) {
-        // ssd1681_set_cursor(&epd, 0, row);
-        // ssd1681_write_buffer(&epd, screen_buffer, 25);
-        // row++;
+        gpio_set_out(0, 6, GPIO_OUT_HIGH);
+        uint8_t temp = counter;
+        for(uint8_t j = 0; j < 4; j++) {
+            uint8_t value = temp % 10;
+            temp = temp / 10;
+            for(int8_t i = 5; i >= 0; i--) {
+                ssd1681_set_cursor(&epd, 0, (5 - i) + (j * 6));
+                const uint8_t b = font[value][i];
+                ssd1681_write_buffer(&epd, &b, 1);
+            }
+        }
+        ssd1681_update_display(&epd);
+        gpio_set_out(0, 6, GPIO_OUT_LOW);
         __delay_cycles(16000000);
+        counter++;
     }
 
     return error;
