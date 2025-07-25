@@ -17,7 +17,22 @@
 #define SSD1681_BUSY            GPIO(1, 2)
 
 static ssd1681_spi_device epd;
-static uint8_t screen_byte = 0x00;
+static uint8_t screen_byte = 0xFF;
+static uint8_t row = 0;
+
+static const uint8_t font[11][6] = {
+    {0x3E, 0x51, 0x49, 0x45, 0x3E, 0x00}, //  0
+    {0x00, 0x42, 0x7F, 0x40, 0x00, 0x00}, //  1
+    {0x72, 0x49, 0x49, 0x49, 0x46, 0x00}, //  2
+    {0x21, 0x41, 0x49, 0x4D, 0x33, 0x00}, //  3
+    {0x18, 0x14, 0x12, 0x7F, 0x10, 0x00}, //  4
+    {0x27, 0x45, 0x45, 0x45, 0x39, 0x00}, //  5
+    {0x3C, 0x4A, 0x49, 0x49, 0x31, 0x00}, //  6
+    {0x41, 0x21, 0x11, 0x09, 0x07, 0x00}, //  7
+    {0x36, 0x49, 0x49, 0x49, 0x36, 0x00}, //  8
+    {0x46, 0x49, 0x49, 0x29, 0x1E, 0x00}, //  9
+    {0x00, 0x00, 0x14, 0x00, 0x00, 0x00}  //  :
+};
 
 // Port 1 Interrupt Service Routine
 #pragma vector=PORT1_VECTOR // Specifies the interrupt vector for Port 1
@@ -31,16 +46,20 @@ __interrupt void Port_1_ISR(void)
         // Debounce (software debounce is often needed for switches)
         // You might introduce a short delay or use a timer to debounce.
         // For simple debouncing:
-        __delay_cycles(20000); // Small delay to ignore bounce
+        __delay_cycles(80000); // Small delay to ignore bounce
         // while (!(P1IN & BIT3)); // Wait for button release (if it's a press event)
         // P1IFG &= ~BIT3; // Clear flag again after debouncing if waiting for release
         gpio_set_out(0, 6, GPIO_OUT_HIGH);
-        ssd1681_fill_screen(&epd, screen_byte);
+        uint8_t screen_buffer[5] = {0x00, 0x00, 0x00, 0x00, 0x00};
+        ssd1681_set_cursor(&epd, 0, row);
+        ssd1681_write_buffer(&epd, screen_buffer, sizeof(screen_buffer));
+        // ssd1681_fill_screen(&epd, screen_byte);
         gpio_set_out(0, 6, GPIO_OUT_LOW);
+        //row++;
         // --- IMPORTANT: Clear the interrupt flag! ---
         // If you don't clear the flag, the interrupt will trigger repeatedly.
         P1IFG &= ~BIT3; // Clear P1.3 interrupt flag
-        screen_byte = ~screen_byte;
+        // screen_byte = ~screen_byte;
     }
 
     // If you had other pins on Port 1 interrupting, you'd add more `if` statements
@@ -81,14 +100,39 @@ int run( void )
     ssd1681_fill_screen(&epd, screen_byte);
     gpio_set_out(0, 6, GPIO_OUT_LOW);
 
-    // Configure P1.3 for interrupt
-    P1IES |= BIT3;   // P1.3 Hi/low transition (falling edge for button press)
-    P1IFG &= ~BIT3;  // Clear P1.3 interrupt flag (important!)
-    P1IE |= BIT3;    // Enable P1.3 interrupt
+    // // Configure P1.3 for interrupt
+    // P1IES |= BIT3;   // P1.3 Hi/low transition (falling edge for button press)
+    // P1IFG &= ~BIT3;  // Clear P1.3 interrupt flag (important!)
+    // P1IE |= BIT3;    // Enable P1.3 interrupt
 
     _BIS_SR(GIE);
 
+    gpio_set_out(0, 6, GPIO_OUT_HIGH);
+    uint8_t screen_buffer[28] = {0x00};
+    for(uint8_t i = 0; i < sizeof(screen_buffer); i++) {
+        screen_buffer[i] = 0x00;
+    }
+
+    for(uint8_t j = 0; j < 11; j++) {
+        for(int8_t i = 5; i >= 0; i--) {
+            ssd1681_set_cursor(&epd, 0, (5 - i) + (j * 6));
+            const uint8_t b = font[j][i];
+            ssd1681_write_buffer(&epd, &b, 1);
+        }
+    }
+    ssd1681_update_display(&epd);
+
+    // ssd1681_set_cursor(&epd, 0, 1);
+    // ssd1681_write_buffer(&epd, screen_buffer, 5);
+    // ssd1681_fill_screen(&epd, screen_byte);
+    gpio_set_out(0, 6, GPIO_OUT_LOW);
+    __delay_cycles(16000000);
     while( 1 ) {
+        // ssd1681_set_cursor(&epd, 0, row);
+        // ssd1681_write_buffer(&epd, screen_buffer, 25);
+        // row++;
+
+
         // // Toggle pin 0 on port 1
         // gpio_toggle_out(GPIO_BANK(SSD1681_LED), GPIO_PIN(SSD1681_LED));
 

@@ -38,5 +38,10 @@ void ssd1681_reset(ssd1681_spi_device *device);
 bool ssd1681_is_busy(ssd1681_spi_device *device);
 bool ssd1681_write(ssd1681_spi_device *device, uint8_t type, uint8_t byte);
 void ssd1681_fill_screen(ssd1681_spi_device *device, uint8_t byte);
+void ssd1681_update_display(ssd1681_spi_device *device);
+void ssd1681_write_buffer(ssd1681_spi_device *device, const uint8_t *buffer, uint16_t len);
+void ssd1681_set_cursor(ssd1681_spi_device *device, uint8_t x, uint8_t y);
+void ssd1681_set_cursor_x(ssd1681_spi_device *device, uint8_t x);
+void ssd1681_set_cursor_y(ssd1681_spi_device *device, uint8_t x);
 
 #endif // DRIVERS_SSD1681_H

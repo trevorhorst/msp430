@@ -125,18 +125,45 @@ void ssd1681_fill_screen(ssd1681_spi_device *device, uint8_t byte)
         ssd1681_write(device, SPI_WRITE_TYPE_DATA, byte);
     }
 
-    // ssd1781_write(device, COMMAND, WRITE_RAM_RED);   //write RAM for black(0)/white (1)
-    // for(i = 0; i < 5000; i++)
-    // {
-    //     ssd1781_write(device, DATA, 0x55);
-    // }
+    ssd1681_update_display(device);
+}
 
+void ssd1681_update_display(ssd1681_spi_device *device)
+{
     ssd1681_write(device, SPI_WRITE_TYPE_COMMAND, SSD1681_COMMAND_DISPLAY_UPDATE); //Display Update Control
     ssd1681_write(device, SPI_WRITE_TYPE_DATA, 0xF7);
     ssd1681_write(device, SPI_WRITE_TYPE_COMMAND, SSD1681_COMMAND_MASTER_ACTIVATION);  //Activate Display Update Sequence
 
     if(ssd1681_is_busy(device)) {
-        __delay_cycles(160000 * 1);
+        __delay_cycles(160000 * 200);
     }
-    //__delay_cycles(160000 * 2);
 }
+
+void ssd1681_write_buffer(ssd1681_spi_device *device, const uint8_t *buffer, uint16_t len)
+{
+    unsigned int i;
+    ssd1681_write(device, SPI_WRITE_TYPE_COMMAND, SSD1681_COMMAND_WRITE_RAM_BW);   //write RAM for black(0)/white (1)
+    for(i = 0; i < len; i++) {
+        ssd1681_write(device, SPI_WRITE_TYPE_DATA, buffer[i]);
+    }
+}
+
+void ssd1681_set_cursor(ssd1681_spi_device *device, uint8_t x, uint8_t y)
+{
+    ssd1681_set_cursor_x(device, x);
+    ssd1681_set_cursor_y(device, y);
+}
+
+void ssd1681_set_cursor_x(ssd1681_spi_device *device, uint8_t x)
+{
+    ssd1681_write(device, SPI_WRITE_TYPE_COMMAND, SSD1681_COMMAND_RAM_X_COUNTER);
+    ssd1681_write(device, SPI_WRITE_TYPE_DATA, x);
+}
+
+void ssd1681_set_cursor_y(ssd1681_spi_device *device, uint8_t y)
+{
+    ssd1681_write(device, SPI_WRITE_TYPE_COMMAND, SSD1681_COMMAND_RAM_Y_COUNTER);
+    ssd1681_write(device, SPI_WRITE_TYPE_DATA, y & 0xFF);
+    ssd1681_write(device, SPI_WRITE_TYPE_DATA, 0x00);
+}
+
