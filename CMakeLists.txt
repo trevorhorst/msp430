@@ -1,5 +1,8 @@
 cmake_minimum_required(VERSION 3.5)
 
+# Stop CMake from trying to run the test executable
+set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
+
 # Add compiler options, this needs to be setup before the project call
 set( CMAKE_C_FLAGS
     "${CMAKE_C_FLAGS} -mmcu=msp430g2553 -std=c99"

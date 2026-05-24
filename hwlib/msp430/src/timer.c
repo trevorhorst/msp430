@@ -7,8 +7,8 @@ void hw_timer_initialize(uint16_t timer)
         TA0CCR0  =  0;                      //
         TA0CCR1  =  0;                      //
         TA0CCR2  =  0;                      //
-        TA0CCTL0 = CCIE;                             // CCR0 interrupt enabled
-        TA0CTL   = TASSEL_2 + MC_1 + ID_0;           // SMCLK/8, upmode
+        TA0CCTL0 = CCIE;                    // CCR0 interrupt enabled
+        TA0CTL   = TASSEL_2 + MC_1 + ID_0;  // SMCLK/8, upmode
     } else if(timer == 1) {
         // Initialize timer 1
         TA1CCR0  =  0;                      //
