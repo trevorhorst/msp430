@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.5)
 project(epd
     LANGUAGES C ASM
     )
@@ -31,6 +31,12 @@ target_link_libraries(
     PRIVATE
     core
     )
+
+target_include_directories(
+    ${PROJECT_NAME}
+    PRIVATE
+        $ENV{HOME}/ti/msp430-gcc/include
+)
 
 target_include_directories(
     ${PROJECT_NAME} PUBLIC
