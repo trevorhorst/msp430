@@ -21,101 +21,51 @@ static uint8_t screen_byte = 0x00;
 static uint8_t row = 0;
 static uint16_t counter = 0;
 
-static const uint8_t font[11][8] = {
-    {
-        0x7C,  // .11111..  (Top bar)
-        0xC6,  // 11...11.  (Sides)
-        0xCE,  // 11..111.  (Sides + internal diagonal slant)
-        0xD6,  // 11.1.11.  (Sides + internal diagonal slant)
-        0xE6,  // 111..11.  (Sides + internal diagonal slant)
-        0xC6,  // 11...11.  (Sides)
-        0x7C,  // .11111..  (Bottom bar)
-        0x00   // ........  (Blank bottom row spacing)
-    },
-    {
-        0x18,  // ...11...  (Top bar)
-        0x38,  // ..111...  (Sides)
-        0x18,  // ...11...  (Sides + internal diagonal slant)
-        0x18,  // ...11...  (Sides + internal diagonal slant)
-        0x18,  // ...11...  (Sides + internal diagonal slant)
-        0x18,  // ...11...  (Sides)
-        0x7E,  // .111111.  (Bottom bar)
-        0x00   // ........  (Blank bottom row spacing)
-    },
-    {
-        0x18,  // ...11...  (Top bar)
-        0x3C,  // ..1111..  (Sides)
-        0x7E,  // .111111.  (Sides + internal diagonal slant)
-        0x18,  // ...11...  (Sides + internal diagonal slant)
-        0x18,  // ...11...  (Sides + internal diagonal slant)
-        0x18,  // ...11...  (Sides)
-        0x7E,  // .111111.  (Bottom bar)
-        0x00   // ........  (Blank bottom row spacing)
-    },
-    // {0x3E, 0x51, 0x49, 0x45, 0x3E, 0x00}, //  0
-    // // // 0
-    // // {0xC1,  // 1 1 0 0 0 0 0 1
-    // //  0xAE,  // 1 0 1 0 1 1 1 0
-    // //  0xB6,  // 1 0 1 1 0 1 1 0
-    // //  0xBA,  // 1 0 1 1 1 0 1 0
-    // //  0xC1,  // 1 1 0 0 0 0 0 1
-    // //  0xFF}, // 1 1 1 1 1 1 1 1
-    // {0x00, 0x42, 0x7F, 0x40, 0x00, 0x00}, //  1
-    // {0x72, 0x49, 0x49, 0x49, 0x46, 0x00}, //  2
-    // {0x21, 0x41, 0x49, 0x4D, 0x33, 0x00}, //  3
-    // {0x18, 0x14, 0x12, 0x7F, 0x10, 0x00}, //  4
-    // {0x27, 0x45, 0x45, 0x45, 0x39, 0x00}, //  5
-    // {0x3C, 0x4A, 0x49, 0x49, 0x31, 0x00}, //  6
-    // {0x41, 0x21, 0x11, 0x09, 0x07, 0x00}, //  7
-    // {0x36, 0x49, 0x49, 0x49, 0x36, 0x00}, //  8
-    // {0x46, 0x49, 0x49, 0x29, 0x1E, 0x00}, //  9
-    // {0x00, 0x00, 0x14, 0x00, 0x00, 0x00}  //  :
-};
-
 // 24 x 39
-static const uint8_t zero[] = {
-    0x3F, 0xFF, 0xFC,
-    0x3F, 0xFF, 0xFC,
-    0xDF, 0xFF, 0xFB,
-    0xEF, 0xFF, 0xF7,
-    0xE0, 0x00, 0x0F,
-    0xE0, 0x00, 0x0F,
-    0xE0, 0x00, 0x0F,
-    0xE0, 0x00, 0x0F,
-    0xE0, 0x00, 0x0F,
-    0xE0, 0x00, 0x0F,
-    0xE0, 0x00, 0x0F,
-    0xE0, 0x00, 0x0F,
-    0xE0, 0x00, 0x0F,
-    0xE0, 0x00, 0x0F,
-    0xE0, 0x00, 0x0F,
-    0xE0, 0x00, 0x0F,
-    0xE0, 0x00, 0x0F,
-    0xE0, 0x00, 0x07,
-    0xC0, 0x00, 0x03,
-    0x00, 0x00, 0x00,
-    0x80, 0x00, 0x03,
-    0xC0, 0x00, 0x07,
-    0xE0, 0x00, 0x0F,
-    0xE0, 0x00, 0x0F,
-    0xE0, 0x00, 0x0F,
-    0xE0, 0x00, 0x0F,
-    0xE0, 0x00, 0x0F,
-    0xE0, 0x00, 0x0F,
-    0xE0, 0x00, 0x0F,
-    0xE0, 0x00, 0x0F,
-    0xE0, 0x00, 0x0F,
-    0xE0, 0x00, 0x0F,
-    0xE0, 0x00, 0x0F,
-    0xE0, 0x00, 0x0F,
-    0xE0, 0x00, 0x0F,
-    0xEF, 0xFF, 0xF7,
-    0xDF, 0xFF, 0xFD,
-    0x3F, 0xFF, 0xFC,
-    0x3F, 0xFF, 0xFC
-};
+static const uint8_t segment_display_number[10][117] = {
+    { // 0
+    0x3F, 0xFF, 0xFC,  // ..11111111111111111111..
+    0x3F, 0xFF, 0xFC,  // ..11111111111111111111..
+    0xDF, 0xFF, 0xFB,  // 11.111111111111111111.11
+    0xEF, 0xFF, 0xF7,  // 111.1111111111111111.111
+    0xE0, 0x00, 0x0F,  // 111.................1111
+    0xE0, 0x00, 0x0F,  // 111.................1111
+    0xE0, 0x00, 0x0F,  // 111.................1111
+    0xE0, 0x00, 0x0F,  // 111.................1111
+    0xE0, 0x00, 0x0F,  // 111.................1111
+    0xE0, 0x00, 0x0F,  // 111.................1111
+    0xE0, 0x00, 0x0F,  // 111.................1111
+    0xE0, 0x00, 0x0F,  // 111.................1111
+    0xE0, 0x00, 0x0F,  // 111.................1111
+    0xE0, 0x00, 0x0F,  // 111.................1111
+    0xE0, 0x00, 0x0F,  // 111.................1111
+    0xE0, 0x00, 0x0F,  // 111.................1111
+    0xE0, 0x00, 0x0F,  // 111.................1111
+    0xE0, 0x00, 0x07,  // 111..................111
+    0xC0, 0x00, 0x03,  // 11....................11
+    0x00, 0x00, 0x00,  // ........................
+    0x80, 0x00, 0x03,  // 1.....................11
+    0xC0, 0x00, 0x07,  // 11...................111
+    0xE0, 0x00, 0x0F,  // 111.................1111
+    0xE0, 0x00, 0x0F,  // 111.................1111
+    0xE0, 0x00, 0x0F,  // 111.................1111
+    0xE0, 0x00, 0x0F,  // 111.................1111
+    0xE0, 0x00, 0x0F,  // 111.................1111
+    0xE0, 0x00, 0x0F,  // 111.................1111
+    0xE0, 0x00, 0x0F,  // 111.................1111
+    0xE0, 0x00, 0x0F,  // 111.................1111
+    0xE0, 0x00, 0x0F,  // 111.................1111
+    0xE0, 0x00, 0x0F,  // 111.................1111
+    0xE0, 0x00, 0x0F,  // 111.................1111
+    0xE0, 0x00, 0x0F,  // 111.................1111
+    0xE0, 0x00, 0x0F,  // 111.................1111
+    0xEF, 0xFF, 0xF7,  // 111.1111111111111111.111
+    0xDF, 0xFF, 0xFD,  // 11.1111111111111111111.1
+    0x3F, 0xFF, 0xFC,  // ..11111111111111111111..
+    0x3F, 0xFF, 0xFC   // ..11111111111111111111..
+    },
 
-static const uint8_t one[] = {
+    { // 1
     0x00, 0x00, 0x00,
     0x00, 0x00, 0x00,
     0x00, 0x00, 0x03,
@@ -155,9 +105,9 @@ static const uint8_t one[] = {
     0x00, 0x00, 0x01,
     0x00, 0x00, 0x00,
     0x00, 0x00, 0x00
-};
+    },
 
-static const uint8_t two[] = {
+    { // 2
     0x3F, 0xFF, 0xFC,
     0x3F, 0xFF, 0xFC,
     0x1F, 0xFF, 0xFB,
@@ -197,9 +147,9 @@ static const uint8_t two[] = {
     0xDF, 0xFF, 0xFC,
     0x3F, 0xFF, 0xFC,
     0x3F, 0xFF, 0xFC
-};
+    },
 
-static const uint8_t three[] = {
+    { // 3
     0x3F, 0xFF, 0xFC,
     0x3F, 0xFF, 0xFC,
     0x1F, 0xFF, 0xFB,
@@ -239,9 +189,9 @@ static const uint8_t three[] = {
     0x1F, 0xFF, 0xFD,
     0x3F, 0xFF, 0xFC,
     0x3F, 0xFF, 0xFC,
-};
+    },
 
-static const uint8_t four[] = {
+    { // 4}
     0x00, 0x00, 0x00,
     0x00, 0x00, 0x00,
     0x00, 0x00, 0x03,
@@ -281,9 +231,9 @@ static const uint8_t four[] = {
     0x00, 0x00, 0x01,
     0x00, 0x00, 0x00,
     0x00, 0x00, 0x00,
-};
+    },
 
-static const uint8_t five[] = {
+    { // 5
     0x3F, 0xFF, 0xFC,
     0x3F, 0xFF, 0xFC,
     0xDF, 0xFF, 0xF8,
@@ -323,9 +273,9 @@ static const uint8_t five[] = {
     0x1F, 0xFF, 0xFD,
     0x3F, 0xFF, 0xFC,
     0x3F, 0xFF, 0xFC,
-};
+    },
 
-static const uint8_t six[] = {
+    { // 6
     0x3F, 0xFF, 0xFC,
     0x3F, 0xFF, 0xFC,
     0xDF, 0xFF, 0xF8,
@@ -365,9 +315,9 @@ static const uint8_t six[] = {
     0xDF, 0xFF, 0xFD,
     0x3F, 0xFF, 0xFC,
     0x3F, 0xFF, 0xFC,
-};
+    },
 
-static const uint8_t seven[] = {
+    { // 7
     0x3F, 0xFF, 0xFC,
     0x3F, 0xFF, 0xFC,
     0x1F, 0xFF, 0xFB,
@@ -407,9 +357,9 @@ static const uint8_t seven[] = {
     0x00, 0x00, 0x01,
     0x00, 0x00, 0x00,
     0x00, 0x00, 0x00,
-};
+    },
 
-static const uint8_t eight[] = {
+    { // 8
     0x3F, 0xFF, 0xFC,
     0x3F, 0xFF, 0xFC,
     0xDF, 0xFF, 0xFB,
@@ -449,9 +399,9 @@ static const uint8_t eight[] = {
     0xDF, 0xFF, 0xFB,
     0x3F, 0xFF, 0xFC,
     0x3F, 0xFF, 0xFC
-};
+    },
 
-static const uint8_t nine[] = {
+    { // 9
     0x3F, 0xFF, 0xFC,
     0x3F, 0xFF, 0xFC,
     0xDF, 0xFF, 0xFB,
@@ -491,6 +441,7 @@ static const uint8_t nine[] = {
     0x00, 0x00, 0x01,
     0x00, 0x00, 0x00,
     0x00, 0x00, 0x00
+    }
 };
 
 static const uint8_t symbols[][16] = {
@@ -651,62 +602,34 @@ __interrupt void Port_1_ISR(void)
 
 void write_char(uint16_t x_pixel_start, uint16_t y_pixel_start)
 {
-    // --- 1. Coordinate & Window Math ---
-    // uint8_t x_byte_start = (uint8_t)(x_pixel_start / 8);
-    // uint8_t x_byte_end   = x_byte_start;
-    // uint16_t y_pixel_end = y_pixel_start + 7;
+    const uint8_t *word = NULL;
 
-    // --- 2. Set Boundaries & RAM Counters ---
+    uint8_t offset = 8;
+    for(uint8_t i = 0; i <= 5; i++) {
+        ssd1681_set_partial_ram_area(&epd, (32 * i) + offset, 50, 24, 39);
+        word = segment_display_number[i];
+        ssd1681_write_buffer(&epd, word, 117);
+    }
 
-    // ssd1681_set_window_x(&epd, x_byte_start, x_byte_end);
-    // ssd1681_set_window_y(&epd, y_pixel_start, y_pixel_end);
-    // ssd1681_set_cursor_x(&epd, x_byte_start);
-    // ssd1681_set_cursor_y(&epd, y_pixel_start);
+    const char date[] = " FRIDAY 05/29";
+    for(uint32_t i = 0; i < strlen(date); i++) {
+        ssd1681_set_partial_ram_area(&epd, (8*i), 0, 8, 16);
+        word = symbols[date[i]];
+        ssd1681_write_buffer(&epd, word, 16);
+    }
 
-    ssd1681_set_partial_ram_area(&epd, 8, 50, 24, 39);
-    const uint8_t *word = zero;
-    ssd1681_write_buffer(&epd, word, 117);
-    // for(uint8_t i = 0; i < 8; i++) {
-    //     const uint8_t byte = word[i];
-    //     ssd1681_write_buffer(&epd, &byte, 1);
+    // ssd1681_partial_update_display(&epd);
+
+    // ssd1681_write(&epd, SPI_WRITE_TYPE_COMMAND, SSD1681_COMMAND_DISPLAY_UPDATE); //Display Update Control
+    // ssd1681_write(&epd, SPI_WRITE_TYPE_DATA, 0xF8);
+    // ssd1681_write(&epd, SPI_WRITE_TYPE_COMMAND, SSD1681_COMMAND_MASTER_ACTIVATION);  //Activate Display Update Sequence
+
+    // if(ssd1681_is_busy(&epd)) {
+    //     __delay_cycles(160000 * 200);
     // }
 
-    ssd1681_set_partial_ram_area(&epd, 40, 50, 24, 39);
-    word = one;
-    ssd1681_write_buffer(&epd, word, 117);
-
-    ssd1681_set_partial_ram_area(&epd, 72, 50, 24, 39);
-    word = two;
-    ssd1681_write_buffer(&epd, word, 117);
-
-    ssd1681_set_partial_ram_area(&epd, 104, 50, 24, 39);
-    word = three;
-    ssd1681_write_buffer(&epd, word, 117);
-
-    ssd1681_set_partial_ram_area(&epd, 136, 50, 24, 39);
-    word = four;
-    ssd1681_write_buffer(&epd, word, 117);
-
-    ssd1681_set_partial_ram_area(&epd, 168, 50, 24, 39);
-    word = five;
-    ssd1681_write_buffer(&epd, word, 117);
-
-    ssd1681_set_partial_ram_area(&epd, 0, 0, 8, 16);
-    word = symbols['T'];
-    ssd1681_write_buffer(&epd, word, 16);
-
-    ssd1681_set_partial_ram_area(&epd, 8, 0, 8, 16);
-    word = symbols['E'];
-    ssd1681_write_buffer(&epd, word, 16);
-
-    ssd1681_set_partial_ram_area(&epd, 16, 0, 8, 16);
-    word = symbols['S'];
-    ssd1681_write_buffer(&epd, word, 16);
-
-    ssd1681_set_partial_ram_area(&epd, 24, 0, 8, 16);
-    word = symbols['T'];
-    ssd1681_write_buffer(&epd, word, 16);
-
+    // ssd1681_write(&epd, SPI_WRITE_TYPE_COMMAND, SSD1681_COMMAND_DISPLAY_UPDATE); //Display Update Control
+    // ssd1681_write(&epd, SPI_WRITE_TYPE_DATA, 0xFC);
 
     ssd1681_update_display(&epd);
 }
@@ -752,35 +675,28 @@ int run( void )
 
     _BIS_SR(GIE);
 
-    // gpio_set_out(0, 6, GPIO_OUT_HIGH);
-    // for(uint8_t j = 0; j < 11; j++) {
-    //     for(int8_t i = 5; i >= 0; i--) {
-    //         ssd1681_set_cursor(&epd, 0, (5 - i) + (j * 6));
-    //         const uint8_t b = font[j][i];
-    //         ssd1681_write_buffer(&epd, &b, 1);
-    //     }
-    // }
-    // ssd1681_update_display(&epd);
-    // gpio_set_out(0, 6, GPIO_OUT_LOW);
-
-    // gpio_set_out(0, 6, GPIO_OUT_HIGH);
-    // ssd1681_set_window(&epd, 0, 10, 10, 0);
-    // gpio_set_out(0, 6, GPIO_OUT_LOW);
+    uint8_t count = 0;
     while( 1 ) {
         gpio_set_out(0, 6, GPIO_OUT_HIGH);
         write_char(20, 100);
-        // uint8_t temp = counter;
-        // for(uint8_t j = 0; j < 1; j++) {
-        //     // uint8_t value = temp % 10;
-        //     uint8_t value = 0;
-        //     temp = temp / 10;
-        //     for(int8_t i = 5; i >= 0; i--) {
-        //         ssd1681_set_cursor(&epd, 0, (5 - i) + (j * 8));
-        //         uint8_t b = font[value][i];
-        //         ssd1681_write_buffer(&epd, &b, 1);
-        //     }
+
+        // uint8_t offset = 8;
+        // ssd1681_set_partial_ram_area(&epd, offset, 50, 24, 39);
+        // const uint8_t *word = segment_display_number[count];
+        // ssd1681_write_buffer(&epd, word, 117);
+        // count++;
+        // if(count > 9) {
+        //     count = 0;
+        //     ssd1681_update_display(&epd);
+        // } else {
+
+        //     ssd1681_partial_update_display(&epd);
+
+        //     ssd1681_write(&epd, SPI_WRITE_TYPE_COMMAND, SSD1681_COMMAND_DISPLAY_UPDATE); //Display Update Control
+        //     ssd1681_write(&epd, SPI_WRITE_TYPE_DATA, 0xF8);
+        //     ssd1681_write(&epd, SPI_WRITE_TYPE_COMMAND, SSD1681_COMMAND_MASTER_ACTIVATION);  //Activate Display Update Sequence
         // }
-        // ssd1681_partial_update_display(&epd);
+
         gpio_set_out(0, 6, GPIO_OUT_LOW);
         __delay_cycles(16000000);
         counter++;

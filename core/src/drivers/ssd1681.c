@@ -218,7 +218,7 @@ void ssd1681_update_display(ssd1681_spi_device *device)
 void ssd1681_partial_update_display(ssd1681_spi_device *device)
 {
     ssd1681_write(device, SPI_WRITE_TYPE_COMMAND, SSD1681_COMMAND_DISPLAY_UPDATE); //Display Update Control
-    ssd1681_write(device, SPI_WRITE_TYPE_DATA, 0x04);
+    ssd1681_write(device, SPI_WRITE_TYPE_DATA, 0xFC);
     ssd1681_write(device, SPI_WRITE_TYPE_COMMAND, SSD1681_COMMAND_MASTER_ACTIVATION);  //Activate Display Update Sequence
 
     if(ssd1681_is_busy(device)) {
