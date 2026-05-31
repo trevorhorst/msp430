@@ -2,6 +2,8 @@
 #include "core/gpio.h"
 #include "core/spi.h"
 
+static enum DisplayMode mode = FULL;
+
 static const uint8_t lut_default_full[] =
     {
         0x32,  // command
@@ -48,8 +50,8 @@ void ssd1681_initialize_display(ssd1681_spi_device *device)
     ssd1681_write(device, SPI_WRITE_TYPE_DATA, (height - 1) / 256);
     ssd1681_write(device, SPI_WRITE_TYPE_DATA, 0x00);
 
-    // ssd1681_write(device, SPI_WRITE_TYPE_COMMAND, SSD1681_COMMAND_BORDER_WAVEFORM);
-    // ssd1681_write(device, SPI_WRITE_TYPE_DATA, 0x05);
+    ssd1681_write(device, SPI_WRITE_TYPE_COMMAND, SSD1681_COMMAND_BORDER_WAVEFORM);
+    ssd1681_write(device, SPI_WRITE_TYPE_DATA, 0x05);
 
     ssd1681_write(device, SPI_WRITE_TYPE_COMMAND, SSD1681_COMMAND_BUILTIN_TEMP);
     ssd1681_write(device, SPI_WRITE_TYPE_DATA, 0x80);
@@ -67,10 +69,6 @@ void ssd1681_initialize_display(ssd1681_spi_device *device)
 
     // ssd1681_write(device, SPI_WRITE_TYPE_COMMAND, 0x3b); // DummyLine
     // ssd1681_write(device, SPI_WRITE_TYPE_DATA, 0x08); // DummyLine
-
-    // Data entry sequence setting
-    ssd1681_write(device, SPI_WRITE_TYPE_COMMAND, SSD1681_COMMAND_DATA_ENTRY_MODE);
-    ssd1681_write(device, SPI_WRITE_TYPE_DATA, 0x03);
 
     ssd1681_set_partial_ram_area(device, 0, 0, width, height);
 
@@ -192,9 +190,29 @@ bool ssd1681_write(ssd1681_spi_device *device, uint8_t type, uint8_t byte)
     return true;
 }
 
+bool ssd1681_write_array(ssd1681_spi_device *device, const uint8_t *buffer, uint16_t len)
+{
+    // Configure Data/Command pin for output (just in case)
+    gpio_set_direction(GPIO_BANK(device->dc), GPIO_PIN(device->dc), GPIO_DIR_OUT);
+    // The Data/Command pin should be high when writing the data
+    gpio_set_out(GPIO_BANK(device->dc), GPIO_PIN(device->dc), GPIO_OUT_HIGH);
+    // Configure Chip Select pin for output (just in case)
+    gpio_set_direction(GPIO_BANK(device->cs), GPIO_PIN(device->cs), GPIO_DIR_OUT);
+    // Take Chip Select low when sending data
+    gpio_set_out(GPIO_BANK(device->cs), GPIO_PIN(device->cs), GPIO_OUT_LOW);
+
+    // Write the byte
+    spi_write(buffer, len);
+
+    // Take Chip Select high when finished
+    gpio_set_out(GPIO_BANK(device->cs), GPIO_PIN(device->cs), GPIO_OUT_HIGH);
+    return true;
+}
+
 void ssd1681_fill_screen(ssd1681_spi_device *device, uint8_t byte)
 {
     unsigned int i;
+    ssd1681_set_partial_ram_area(device, 0, 0, 200, 200);
     ssd1681_write(device, SPI_WRITE_TYPE_COMMAND, SSD1681_COMMAND_WRITE_RAM_BW);   //write RAM for black(0)/white (1)
     for(i = 0; i < 5000; i++)
     {
@@ -204,15 +222,30 @@ void ssd1681_fill_screen(ssd1681_spi_device *device, uint8_t byte)
     ssd1681_update_display(device);
 }
 
+void ssd1681_fill_screen_red(ssd1681_spi_device *device, uint8_t byte)
+{
+    unsigned int i;
+    ssd1681_set_partial_ram_area(device, 0, 0, 200, 200);
+    ssd1681_write(device, SPI_WRITE_TYPE_COMMAND, SSD1681_COMMAND_WRITE_RAM_RED);   //write RAM for black(0)/white (1)
+    for(i = 0; i < 5000; i++)
+    {
+        ssd1681_write(device, SPI_WRITE_TYPE_DATA, byte);
+    }
+
+    //ssd1681_update_display(device);
+}
+
 void ssd1681_update_display(ssd1681_spi_device *device)
 {
     ssd1681_write(device, SPI_WRITE_TYPE_COMMAND, SSD1681_COMMAND_DISPLAY_UPDATE); //Display Update Control
     ssd1681_write(device, SPI_WRITE_TYPE_DATA, 0xF7);
     ssd1681_write(device, SPI_WRITE_TYPE_COMMAND, SSD1681_COMMAND_MASTER_ACTIVATION);  //Activate Display Update Sequence
 
-    if(ssd1681_is_busy(device)) {
-        __delay_cycles(160000 * 200);
+    while(ssd1681_is_busy(device)) {
+        __delay_cycles(16000);
     }
+
+    mode = FULL;
 }
 
 void ssd1681_partial_update_display(ssd1681_spi_device *device)
@@ -221,8 +254,8 @@ void ssd1681_partial_update_display(ssd1681_spi_device *device)
     ssd1681_write(device, SPI_WRITE_TYPE_DATA, 0xFC);
     ssd1681_write(device, SPI_WRITE_TYPE_COMMAND, SSD1681_COMMAND_MASTER_ACTIVATION);  //Activate Display Update Sequence
 
-    if(ssd1681_is_busy(device)) {
-        __delay_cycles(160000 * 200);
+    while(ssd1681_is_busy(device)) {
+        __delay_cycles(16000);
     }
 }
 
@@ -344,4 +377,75 @@ void ssd1681_power_off(ssd1681_spi_device *device)
     if(ssd1681_is_busy(device)) {
         __delay_cycles(160000 * 200);
     }
+}
+
+static const uint8_t quick_lut[] = {0x0010,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x00A0,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0050,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0020,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0002,0x0001,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0020,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000,0x0000};
+
+void ssd1681_set_custom_lut(ssd1681_spi_device *device, uint8_t m)
+{
+    ssd1681_write(device, SPI_WRITE_TYPE_COMMAND, SSD1681_COMMAND_WRITE_LUT_REG);
+
+    const uint8_t *lut = quick_lut;
+    ssd1681_write_array(device, lut, 153);
+
+    ssd1681_write(device, SPI_WRITE_TYPE_COMMAND, 0x3F);
+    ssd1681_write(device, SPI_WRITE_TYPE_DATA, 0x07);
+    ssd1681_write(device, SPI_WRITE_TYPE_COMMAND, SSD1681_COMMAND_GATE_DRIVING_VOLTAGE);
+    ssd1681_write(device, SPI_WRITE_TYPE_DATA, 0x17);
+    ssd1681_write(device, SPI_WRITE_TYPE_COMMAND, SSD1681_COMMAND_SOURCE_DRIVING_VOLTAGE);
+    ssd1681_write(device, SPI_WRITE_TYPE_DATA, 0x41);
+    ssd1681_write(device, SPI_WRITE_TYPE_DATA, 0x00);
+    ssd1681_write(device, SPI_WRITE_TYPE_DATA, 0x32);
+    ssd1681_write(device, SPI_WRITE_TYPE_COMMAND, SSD1681_COMMAND_WRITE_VCOM);
+    ssd1681_write(device, SPI_WRITE_TYPE_DATA, 0x20);
+
+    // .eopt {0x07}, // "keep previous output before power off"
+    // .vgh {0x17}, // Max 20V
+    // .vsh1_vsh2_vsl {{0x41, 0x0, 0x32}}, //15/0/-15
+    // .vcom {0x20}, // VCOM 0x20 best
+}
+
+void ssd1681_partial_refresh(ssd1681_spi_device *device)
+{
+    uint8_t kTurnOn = 0b11000000; // Enables oscillator & analog
+    uint8_t kLoadTemp = 0b00100000;
+    uint8_t kLoadLut = 0b00010000;
+    uint8_t kPartialMode = 0b00001000;
+    uint8_t kDisplay = 0b00000100;
+    // constexpr auto kTurnOff = 0b00000011; // Disables oscillator & analog
+
+    // Default modes FAST/FULL are loaded from the ROM
+    bool romLut = false;
+
+    // Build default updateCommand
+    uint8_t updateCommand = kTurnOn;
+    if (romLut) {
+        updateCommand |= kLoadLut;
+    } else {
+        ssd1681_set_custom_lut(device, mode);
+    }
+
+    if(mode != FULL) {
+        updateCommand |= kPartialMode;
+    }
+    // if (!kFastUpdateTemp) {
+    //     updateCommand |= kLoadTemp;
+    // }
+
+    // If we are chaging from FULL to FAST/CUSTOM need to set
+    // the display into 2 buffer mode again by triggering an update
+    if(mode == FULL) {
+        ssd1681_write(device, SPI_WRITE_TYPE_COMMAND, SSD1681_COMMAND_DISPLAY_UPDATE);
+        ssd1681_write(device, SPI_WRITE_TYPE_DATA, updateCommand);
+        ssd1681_write(device, SPI_WRITE_TYPE_COMMAND, SSD1681_COMMAND_MASTER_ACTIVATION);
+        if(ssd1681_is_busy(device)) {
+            __delay_cycles(160000 * 200);
+        }
+    }
+
+    ssd1681_write(device, SPI_WRITE_TYPE_COMMAND, SSD1681_COMMAND_DISPLAY_UPDATE);
+    ssd1681_write(device, SPI_WRITE_TYPE_DATA, updateCommand | kDisplay);
+    ssd1681_write(device, SPI_WRITE_TYPE_COMMAND, SSD1681_COMMAND_MASTER_ACTIVATION);  //Activate Display Update Sequence
+    // kState.fullMode = mode == DisplayMode::FULL;
+    mode = QUICK;
 }
