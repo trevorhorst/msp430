@@ -64,12 +64,6 @@ void ssd1681_initialize_display(ssd1681_spi_device *device)
     // ssd1681_write(device, SPI_WRITE_TYPE_COMMAND, SSD1681_COMMAND_WRITE_VCOM);
     // ssd1681_write(device, SPI_WRITE_TYPE_DATA, 0x9B);
 
-    // ssd1681_write(device, SPI_WRITE_TYPE_COMMAND, 0x3a); // DummyLine
-    // ssd1681_write(device, SPI_WRITE_TYPE_DATA, 0x1a); // DummyLine
-
-    // ssd1681_write(device, SPI_WRITE_TYPE_COMMAND, 0x3b); // DummyLine
-    // ssd1681_write(device, SPI_WRITE_TYPE_DATA, 0x08); // DummyLine
-
     ssd1681_set_partial_ram_area(device, 0, 0, width, height);
 
     while(ssd1681_is_busy(device)) {

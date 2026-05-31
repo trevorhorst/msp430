@@ -646,21 +646,24 @@ void write_char(uint16_t x_pixel_start, uint16_t y_pixel_start)
 {
     const uint8_t *word = NULL;
 
-    uint8_t offset = 8;
-    for(uint8_t i = 0; i <= 5; i++) {
-        ssd1681_set_partial_ram_area(&epd, (32 * i) + offset, 50, 24, 39);
-        word = segment_display_number[i];
-        ssd1681_write_buffer(&epd, word, 117);
-    }
+    // uint8_t offset = 8;
+    // for(uint8_t i = 0; i <= 5; i++) {
+    //     ssd1681_set_partial_ram_area(&epd, (32 * i) + offset, 50, 24, 39);
+    //     word = segment_display_number[i];
+    //     ssd1681_write_buffer(&epd, word, 117);
+    // }
 
     const char date[] = " FRIDAY 05/29";
     for(uint32_t i = 0; i < strlen(date); i++) {
         ssd1681_set_partial_ram_area(&epd, (8*i), 0, 8, 16);
         word = symbols[date[i]];
+        ssd1681_write(&epd, SPI_WRITE_TYPE_COMMAND, SSD1681_COMMAND_WRITE_RAM_BW);   //write RAM for black(0)/white (1)
+        ssd1681_write_buffer(&epd, word, 16);
+        ssd1681_write(&epd, SPI_WRITE_TYPE_COMMAND, SSD1681_COMMAND_WRITE_RAM_RED);   //write RAM for black(0)/white (1)
         ssd1681_write_buffer(&epd, word, 16);
     }
 
-    ssd1681_partial_refresh(&epd);
+    // ssd1681_partial_refresh(&epd);
     // ssd1681_partial_update_display(&epd);
 
     // ssd1681_write(&epd, SPI_WRITE_TYPE_COMMAND, SSD1681_COMMAND_DISPLAY_UPDATE); //Display Update Control
@@ -676,6 +679,11 @@ void write_char(uint16_t x_pixel_start, uint16_t y_pixel_start)
 
     // ssd1681_update_display(&epd);
 }
+
+// void draw_symbol(const uint8_t *buffer, uint16_t len, uint8_t x, uint8_t y, uint8_t width, uint8_t height)
+// {
+//     ssd1681_set_partial_ram_area(&epd, x, y, width, height);
+// }
 
 int run( void )
 {
@@ -722,17 +730,16 @@ int run( void )
     uint8_t count = 0;
     while( 1 ) {
         gpio_set_out(0, 6, GPIO_OUT_HIGH);
-        // ssd1681_fill_screen(&epd, (counter & 0x1) ? 0x00 : 0xFF);
-
-        // write_char(20, 100);
 
         uint8_t offset = 40;
         const uint8_t *word = segment_display_number[count];
+        write_char(0,0);
         ssd1681_set_partial_ram_area(&epd, offset, 50, 24, 39);
         ssd1681_write(&epd, SPI_WRITE_TYPE_COMMAND, SSD1681_COMMAND_WRITE_RAM_BW);   //write RAM for black(0)/white (1)
         ssd1681_write_array(&epd, blank, 117);
         ssd1681_partial_update_display(&epd);
 
+        write_char(0,0);
         ssd1681_set_partial_ram_area(&epd, offset, 50, 24, 39);
         ssd1681_write(&epd, SPI_WRITE_TYPE_COMMAND, SSD1681_COMMAND_WRITE_RAM_RED);   //write RAM for black(0)/white (1)
         ssd1681_write_array(&epd, blank, 117);
