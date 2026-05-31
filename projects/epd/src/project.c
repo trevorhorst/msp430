@@ -444,6 +444,48 @@ static const uint8_t segment_display_number[10][117] = {
     }
 };
 
+static const uint8_t blank[] = {
+    0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00
+};
+
 static const uint8_t symbols[][16] = {
     { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,  },       //0x00,
     { 0x00, 0x00, 0x7E, 0x81, 0xA5, 0x81, 0x81, 0xBD, 0x99, 0x81, 0x81, 0x7E, 0x00, 0x00, 0x00, 0x00,  },       //0x01,
@@ -618,6 +660,7 @@ void write_char(uint16_t x_pixel_start, uint16_t y_pixel_start)
         ssd1681_write_buffer(&epd, word, 16);
     }
 
+    ssd1681_partial_refresh(&epd);
     // ssd1681_partial_update_display(&epd);
 
     // ssd1681_write(&epd, SPI_WRITE_TYPE_COMMAND, SSD1681_COMMAND_DISPLAY_UPDATE); //Display Update Control
@@ -631,7 +674,7 @@ void write_char(uint16_t x_pixel_start, uint16_t y_pixel_start)
     // ssd1681_write(&epd, SPI_WRITE_TYPE_COMMAND, SSD1681_COMMAND_DISPLAY_UPDATE); //Display Update Control
     // ssd1681_write(&epd, SPI_WRITE_TYPE_DATA, 0xFC);
 
-    ssd1681_update_display(&epd);
+    // ssd1681_update_display(&epd);
 }
 
 int run( void )
@@ -665,7 +708,8 @@ int run( void )
     ssd1681_initialize_display_full(&epd);
 
     gpio_set_out(0, 6, GPIO_OUT_HIGH);
-    ssd1681_fill_screen(&epd, screen_byte);
+    ssd1681_fill_screen_red(&epd, 0x00);
+    ssd1681_fill_screen(&epd, 0x00);
     gpio_set_out(0, 6, GPIO_OUT_LOW);
 
     // Configure P1.3 for interrupt
@@ -678,27 +722,38 @@ int run( void )
     uint8_t count = 0;
     while( 1 ) {
         gpio_set_out(0, 6, GPIO_OUT_HIGH);
-        write_char(20, 100);
+        // ssd1681_fill_screen(&epd, (counter & 0x1) ? 0x00 : 0xFF);
 
-        // uint8_t offset = 8;
-        // ssd1681_set_partial_ram_area(&epd, offset, 50, 24, 39);
-        // const uint8_t *word = segment_display_number[count];
-        // ssd1681_write_buffer(&epd, word, 117);
-        // count++;
-        // if(count > 9) {
-        //     count = 0;
-        //     ssd1681_update_display(&epd);
-        // } else {
+        // write_char(20, 100);
 
-        //     ssd1681_partial_update_display(&epd);
+        uint8_t offset = 40;
+        const uint8_t *word = segment_display_number[count];
+        ssd1681_set_partial_ram_area(&epd, offset, 50, 24, 39);
+        ssd1681_write(&epd, SPI_WRITE_TYPE_COMMAND, SSD1681_COMMAND_WRITE_RAM_BW);   //write RAM for black(0)/white (1)
+        ssd1681_write_array(&epd, blank, 117);
+        ssd1681_partial_update_display(&epd);
 
-        //     ssd1681_write(&epd, SPI_WRITE_TYPE_COMMAND, SSD1681_COMMAND_DISPLAY_UPDATE); //Display Update Control
-        //     ssd1681_write(&epd, SPI_WRITE_TYPE_DATA, 0xF8);
-        //     ssd1681_write(&epd, SPI_WRITE_TYPE_COMMAND, SSD1681_COMMAND_MASTER_ACTIVATION);  //Activate Display Update Sequence
-        // }
+        ssd1681_set_partial_ram_area(&epd, offset, 50, 24, 39);
+        ssd1681_write(&epd, SPI_WRITE_TYPE_COMMAND, SSD1681_COMMAND_WRITE_RAM_RED);   //write RAM for black(0)/white (1)
+        ssd1681_write_array(&epd, blank, 117);
+
+        ssd1681_set_partial_ram_area(&epd, offset, 50, 24, 39);
+        ssd1681_write(&epd, SPI_WRITE_TYPE_COMMAND, SSD1681_COMMAND_WRITE_RAM_BW);   //write RAM for black(0)/white (1)
+        ssd1681_write_array(&epd, word, 117);
+
+        count++;
 
         gpio_set_out(0, 6, GPIO_OUT_LOW);
-        __delay_cycles(16000000);
+
+        if(count > 9) {
+            // ssd1681_set_partial_ram_area(&epd, 0, 0, 200, 200);
+            // ssd1681_update_display(&epd);
+            count = 0;
+        } else {
+        }
+        ssd1681_partial_update_display(&epd);
+
+        // __delay_cycles(16000000);
         counter++;
     }
 
