@@ -253,17 +253,6 @@ void ssd1681_partial_update_display(ssd1681_spi_device *device)
     }
 }
 
-void ssd1681_partial_update_full(ssd1681_spi_device *device)
-{
-    ssd1681_write(device, SPI_WRITE_TYPE_COMMAND, SSD1681_COMMAND_DISPLAY_UPDATE); //Display Update Control
-    ssd1681_write(device, SPI_WRITE_TYPE_DATA, 0xC4);
-    ssd1681_write(device, SPI_WRITE_TYPE_COMMAND, SSD1681_COMMAND_MASTER_ACTIVATION);  //Activate Display Update Sequence
-
-    if(ssd1681_is_busy(device)) {
-        __delay_cycles(160000 * 200);
-    }
-}
-
 void ssd1681_write_buffer(ssd1681_spi_device *device, const uint8_t *buffer, uint16_t len)
 {
     unsigned int i;

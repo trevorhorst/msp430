@@ -6,6 +6,9 @@
 #include "hwlib/spi.h"
 #include "hwlib/gpio.h"
 
+#define SSD1681_BLACK	0x00
+#define SSD1681_RED		0x01
+
 #define SSD1681_COMMAND_DRIVER_OUTPUT           0x01
 #define SSD1681_COMMAND_GATE_DRIVING_VOLTAGE    0x03
 #define SSD1681_COMMAND_SOURCE_DRIVING_VOLTAGE  0x04
@@ -55,7 +58,6 @@ void ssd1681_fill_screen(ssd1681_spi_device *device, uint8_t byte);
 void ssd1681_fill_screen_red(ssd1681_spi_device *device, uint8_t byte);
 void ssd1681_update_display(ssd1681_spi_device *device);
 void ssd1681_partial_update_display(ssd1681_spi_device *device);
-void ssd1681_partial_update_full(ssd1681_spi_device *device);
 void ssd1681_write_buffer(ssd1681_spi_device *device, const uint8_t *buffer, uint16_t len);
 void ssd1681_set_window(ssd1681_spi_device *device, uint8_t x_start, uint8_t x_end, uint8_t y_start, uint8_t y_end);
 void ssd1681_set_window_x(ssd1681_spi_device *device, uint8_t start, uint8_t end);

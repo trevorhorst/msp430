@@ -680,10 +680,21 @@ void write_char(uint16_t x_pixel_start, uint16_t y_pixel_start)
     // ssd1681_update_display(&epd);
 }
 
-// void draw_symbol(const uint8_t *buffer, uint16_t len, uint8_t x, uint8_t y, uint8_t width, uint8_t height)
-// {
-//     ssd1681_set_partial_ram_area(&epd, x, y, width, height);
-// }
+void draw_symbol(const uint8_t *buffer, uint16_t len, uint8_t color, uint8_t x, uint8_t y, uint8_t width, uint8_t height)
+{
+    ssd1681_set_partial_ram_area(&epd, x, y, width, height);
+    if(color == SSD1681_BLACK) {
+        ssd1681_write(&epd, SPI_WRITE_TYPE_COMMAND, SSD1681_COMMAND_WRITE_RAM_BW);   //write RAM for black(0)/white (1)
+    } else if(color == SSD1681_RED) {
+        ssd1681_write(&epd, SPI_WRITE_TYPE_COMMAND, SSD1681_COMMAND_WRITE_RAM_RED);   //write RAM for black(0)/white (1)
+    }
+    ssd1681_write_array(&epd, buffer, len);
+}
+
+void draw_counter()
+{
+
+}
 
 int run( void )
 {
@@ -728,39 +739,53 @@ int run( void )
     _BIS_SR(GIE);
 
     uint8_t count = 0;
+    uint8_t tens = 0;
+    uint8_t ones = 0;
+    uint8_t tens_last = 0;
+    uint8_t ones_last = 0;
     while( 1 ) {
         gpio_set_out(0, 6, GPIO_OUT_HIGH);
 
-        uint8_t offset = 40;
-        const uint8_t *word = segment_display_number[count];
-        write_char(0,0);
-        ssd1681_set_partial_ram_area(&epd, offset, 50, 24, 39);
-        ssd1681_write(&epd, SPI_WRITE_TYPE_COMMAND, SSD1681_COMMAND_WRITE_RAM_BW);   //write RAM for black(0)/white (1)
-        ssd1681_write_array(&epd, blank, 117);
+        tens = count / 10;
+        ones = count % 10;
+
+        uint8_t offset = 64;
+        // write_char(0,0);
+        const uint8_t *symbol = segment_display_number[tens];
+        if(tens_last != tens) {
+            draw_symbol(blank, 117, SSD1681_BLACK, offset, 50, 24, 39);
+        } else {
+            draw_symbol(symbol, 117, SSD1681_BLACK, offset, 50, 24, 39);
+        }
+        draw_symbol(blank, 117, SSD1681_BLACK, offset + 40, 50, 24, 39);
         ssd1681_partial_update_display(&epd);
 
-        write_char(0,0);
-        ssd1681_set_partial_ram_area(&epd, offset, 50, 24, 39);
-        ssd1681_write(&epd, SPI_WRITE_TYPE_COMMAND, SSD1681_COMMAND_WRITE_RAM_RED);   //write RAM for black(0)/white (1)
-        ssd1681_write_array(&epd, blank, 117);
+        // write_char(0,0);
+        draw_symbol(blank, 117, SSD1681_RED, offset, 50, 24, 39);
+        draw_symbol(blank, 117, SSD1681_RED, offset + 40, 50, 24, 39);
 
-        ssd1681_set_partial_ram_area(&epd, offset, 50, 24, 39);
-        ssd1681_write(&epd, SPI_WRITE_TYPE_COMMAND, SSD1681_COMMAND_WRITE_RAM_BW);   //write RAM for black(0)/white (1)
-        ssd1681_write_array(&epd, word, 117);
+        const uint8_t *word = segment_display_number[tens];
+        draw_symbol(word, 117, SSD1681_BLACK, offset, 50, 24, 39);
+
+        word = segment_display_number[ones];
+        draw_symbol(word, 117, SSD1681_BLACK, offset + 40, 50, 24, 39);
+
+        ones_last = ones;
+        tens_last = tens;
 
         count++;
 
         gpio_set_out(0, 6, GPIO_OUT_LOW);
 
-        if(count > 9) {
-            // ssd1681_set_partial_ram_area(&epd, 0, 0, 200, 200);
-            // ssd1681_update_display(&epd);
-            count = 0;
-        } else {
-        }
         ssd1681_partial_update_display(&epd);
 
-        // __delay_cycles(16000000);
+        if(count > 60) {
+            ssd1681_update_display(&epd);
+            ssd1681_update_display(&epd);
+            ssd1681_update_display(&epd);
+            count = 0;
+        }
+
         counter++;
     }
 
