@@ -691,53 +691,38 @@ void draw_symbol(const uint8_t *buffer, uint16_t len, uint8_t color, uint8_t x, 
     ssd1681_write_array(&epd, buffer, len);
 }
 
-void draw_counter()
+void draw_counter_example()
 {
+    uint8_t count = 0;
+    uint8_t tens = 0;
+    uint8_t ones = 0;
+    uint8_t tens_last = 0;
+    uint8_t ones_last = 0;
+    while( 1 ) {
+        gpio_set_out(0, 6, GPIO_OUT_HIGH);
 
+        tens = count / 10;
+        ones = count % 10;
+
+        draw_symbol(segment_display_number[tens], 117, SSD1681_BLACK, 64, 50, 24, 39);
+        draw_symbol(segment_display_number[ones], 117, SSD1681_BLACK, 104, 50, 24, 39);
+        count++;
+
+        if(count > 60) {
+            ssd1681_update_display(&epd);
+            gpio_set_out(0, 6, GPIO_OUT_LOW);
+            __delay_cycles(160000 * 200);
+            count = 0;
+        } else {
+            ssd1681_partial_update_display(&epd);
+            gpio_set_out(0, 6, GPIO_OUT_LOW);
+            __delay_cycles(160000 * 70);
+        }
+    }
 }
 
-int run( void )
+void draw_counter_example_2()
 {
-    int32_t error = 0;
-
-    // Set MCLK = SMCLK = 16MHz
-    BCSCTL1 = CALBC1_16MHZ;
-    DCOCTL = CALDCO_16MHZ;
-
-    gpio_set_direction(0, 3, GPIO_DIR_IN);
-    gpio_set_resistor(0, 3, true, GPIO_RESISTOR_PULLUP);
-
-    // Enable pin 0 on port 1
-    gpio_set_direction(GPIO_BANK(SSD1681_LED), GPIO_PIN(SSD1681_LED), GPIO_DIR_OUT);
-    gpio_set_direction(0, 6, GPIO_DIR_OUT);
-    gpio_set_out(GPIO_BANK(SSD1681_LED), GPIO_PIN(SSD1681_LED), GPIO_OUT_LOW);
-    gpio_set_out(0, 6, GPIO_OUT_LOW);
-
-    // Configure P1.1 (SOMI), P1.2 (SIMO), P1.4 (CLK) for USCI_A0 function
-    P1SEL |= BIT1 | BIT2 | BIT4;
-    P1SEL2 |= BIT1 | BIT2 | BIT4;
-
-    error = spi_initialize();
-
-    ssd1681_initialize(&epd,
-                       SSD1681_CHIP_SELECT,
-                       SSD1681_DATA_COMMAND,
-                       SSD1681_BUSY,
-                       SSD1681_RESET);
-    ssd1681_initialize_display_full(&epd);
-
-    gpio_set_out(0, 6, GPIO_OUT_HIGH);
-    ssd1681_fill_screen_red(&epd, 0x00);
-    ssd1681_fill_screen(&epd, 0x00);
-    gpio_set_out(0, 6, GPIO_OUT_LOW);
-
-    // Configure P1.3 for interrupt
-    P1IES |= BIT3;   // P1.3 Hi/low transition (falling edge for button press)
-    P1IFG &= ~BIT3;  // Clear P1.3 interrupt flag (important!)
-    P1IE  |= BIT3;    // Enable P1.3 interrupt
-
-    _BIS_SR(GIE);
-
     uint8_t count = 0;
     uint8_t tens = 0;
     uint8_t ones = 0;
@@ -788,6 +773,52 @@ int run( void )
 
         counter++;
     }
+}
+
+int run( void )
+{
+    int32_t error = 0;
+
+    // Set MCLK = SMCLK = 16MHz
+    BCSCTL1 = CALBC1_16MHZ;
+    DCOCTL = CALDCO_16MHZ;
+
+    gpio_set_direction(0, 3, GPIO_DIR_IN);
+    gpio_set_resistor(0, 3, true, GPIO_RESISTOR_PULLUP);
+
+    // Enable pin 0 on port 1
+    gpio_set_direction(GPIO_BANK(SSD1681_LED), GPIO_PIN(SSD1681_LED), GPIO_DIR_OUT);
+    gpio_set_direction(0, 6, GPIO_DIR_OUT);
+    gpio_set_out(GPIO_BANK(SSD1681_LED), GPIO_PIN(SSD1681_LED), GPIO_OUT_LOW);
+    gpio_set_out(0, 6, GPIO_OUT_LOW);
+
+    // Configure P1.1 (SOMI), P1.2 (SIMO), P1.4 (CLK) for USCI_A0 function
+    P1SEL |= BIT1 | BIT2 | BIT4;
+    P1SEL2 |= BIT1 | BIT2 | BIT4;
+
+    error = spi_initialize();
+
+    ssd1681_initialize(&epd,
+                       SSD1681_CHIP_SELECT,
+                       SSD1681_DATA_COMMAND,
+                       SSD1681_BUSY,
+                       SSD1681_RESET);
+    ssd1681_initialize_display_full(&epd);
+
+    gpio_set_out(0, 6, GPIO_OUT_HIGH);
+    ssd1681_fill_screen_red(&epd, 0x00);
+    ssd1681_fill_screen(&epd, 0x00);
+    gpio_set_out(0, 6, GPIO_OUT_LOW);
+
+    // Configure P1.3 for interrupt
+    P1IES |= BIT3;   // P1.3 Hi/low transition (falling edge for button press)
+    P1IFG &= ~BIT3;  // Clear P1.3 interrupt flag (important!)
+    P1IE  |= BIT3;    // Enable P1.3 interrupt
+
+    _BIS_SR(GIE);
+
+    draw_counter_example();
+    // draw_counter_example_2();
 
     return error;
 }
