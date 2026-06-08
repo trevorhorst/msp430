@@ -35,8 +35,8 @@ int32_t hw_i2c_initialize(uint8_t bus)
          * Configure the baud rate registers for 100kHz when sourcing from SMCLK
          * where SMCLK = 1MHz
          */
-        UCB0BR0 = 10;
-        UCB0BR1 = 0;
+        UCB0BR0 = 0x28;
+        UCB0BR1 = 0x00;
 
         /* Take USCI_B0 out of reset and source clock from SMCLK */
         UCB0CTL1 = UCSSEL_2;

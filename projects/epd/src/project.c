@@ -1,7 +1,9 @@
 // Core headers
 #include "core/gpio.h"
 #include "core/spi.h"
+#include "core/i2c.h"
 #include "core/drivers/ssd1681.h"
+#include "core/sht3xdis.h"
 
 // Project headers
 #include "project/project.h"
@@ -444,6 +446,7 @@ static const uint8_t segment_display_number[10][117] = {
     }
 };
 
+/*
 static const uint8_t blank[] = {
     0x00, 0x00, 0x00,
     0x00, 0x00, 0x00,
@@ -485,6 +488,330 @@ static const uint8_t blank[] = {
     0x00, 0x00, 0x00,
     0x00, 0x00, 0x00
 };
+*/
+
+// .00000..
+// 00.0.00.
+// 00.0.00.
+// 0.000.0.
+// 0.000.0.
+// 0..0..0.
+// .00.00..
+// 0..0..0.
+// 0.000.0.
+// 0.000.0.
+// 00.0.00.
+// 00.0.00.
+// .00000..
+
+// ........
+// .0...0..
+// .0...0..
+// .00.00..
+// ..0.0...
+// ..0.0...
+// ........
+// ..0.0...
+// ..0.0...
+// .00.00..
+// .0...0..
+// .0...0..
+// ........
+
+static const uint8_t small_segments[][14] = {
+    {
+        0x7C, // .00000..
+        0x82, // 0.....0.
+        0x82, // 0.....0.
+        0x82, // 0.....0.
+        0x82, // 0.....0.
+        0x82, // 0.....0.
+        0x00, // ........
+        0x82, // 0.....0.
+        0x82, // 0.....0.
+        0x82, // 0.....0.
+        0x82, // 0.....0.
+        0x82, // 0.....0.
+        0x7C, // .00000..
+        0x00  // ........
+    },
+    {
+        0x00, // ........
+        0x02, // ......0.
+        0x02, // ......0.
+        0x02, // ......0.
+        0x02, // ......0.
+        0x02, // ......0.
+        0x00, // ........
+        0x02, // ......0.
+        0x02, // ......0.
+        0x02, // ......0.
+        0x02, // ......0.
+        0x02, // ......0.
+        0x00, // ........
+        0x00  // ........
+    },
+    {
+        0x7C, // .00000..
+        0x02, // ......0.
+        0x02, // ......0.
+        0x02, // ......0.
+        0x02, // ......0.
+        0x02, // ......0.
+        0x6C, // .00.00..
+        0x80, // 0.......
+        0x80, // 0.......
+        0x80, // 0.......
+        0x80, // 0.......
+        0x80, // 0.......
+        0x7C, // .00000..
+        0x00  // ........
+    },
+    {
+        0x7C, // .00000..
+        0x82, // ......0.
+        0x82, // ......0.
+        0x82, // ......0.
+        0x82, // ......0.
+        0x82, // ......0.
+        0x6C, // .00.00..
+        0x82, // ......0.
+        0x82, // ......0.
+        0x82, // ......0.
+        0x82, // ......0.
+        0x82, // ......0.
+        0x7C, // .00000..
+        0x00  // ........
+    },
+    {
+        0x00, // ........
+        0x82, // 0.....0.
+        0x82, // 0.....0.
+        0x82, // 0.....0.
+        0x82, // 0.....0.
+        0x82, // 0.....0.
+        0x6C, // .00.00..
+        0x02, // ......0.
+        0x02, // ......0.
+        0x02, // ......0.
+        0x02, // ......0.
+        0x02, // ......0.
+        0x00, // ........
+        0x00  // ........
+    },
+    {
+        0x7C, // .00000..
+        0x80, // 0.......
+        0x80, // 0.......
+        0x80, // 0.......
+        0x80, // 0.......
+        0x80, // 0.......
+        0x6C, // .00.00..
+        0x02, // ......0.
+        0x02, // ......0.
+        0x02, // ......0.
+        0x02, // ......0.
+        0x02, // ......0.
+        0x7C, // .00000..
+        0x00  // ........
+    },
+    {
+        0x7C, // .00000..
+        0x80, // 0.......
+        0x80, // 0.......
+        0x80, // 0.......
+        0x80, // 0.......
+        0x80, // 0.......
+        0x6C, // .00.00..
+        0x82, // 0.....0.
+        0x82, // 0.....0.
+        0x82, // 0.....0.
+        0x82, // 0.....0.
+        0x82, // 0.....0.
+        0x7C, // .00000..
+        0x00  // ........
+    },
+    {
+        0x7C, // .00000..
+        0x02, // ......0.
+        0x02, // ......0.
+        0x02, // ......0.
+        0x02, // ......0.
+        0x02, // ......0.
+        0x00, // ........
+        0x02, // ......0.
+        0x02, // ......0.
+        0x02, // ......0.
+        0x02, // ......0.
+        0x02, // ......0.
+        0x00, // ........
+        0x00  // ........
+    },
+    {
+        0x7C, // .00000..
+        0x82, // 0.....0.
+        0x82, // 0.....0.
+        0x82, // 0.....0.
+        0x82, // 0.....0.
+        0x82, // 0.....0.
+        0x6C, // .00.00..
+        0x82, // 0.....0.
+        0x82, // 0.....0.
+        0x82, // 0.....0.
+        0x82, // 0.....0.
+        0x82, // 0.....0.
+        0x7C, // .00000..
+        0x00  // ........
+    },
+    {
+        0x7C, // .00000..
+        0x82, // 0.....0.
+        0x82, // 0.....0.
+        0x82, // 0.....0.
+        0x82, // 0.....0.
+        0x82, // 0.....0.
+        0x6C, // .00.00..
+        0x02, // ......0.
+        0x02, // ......0.
+        0x02, // ......0.
+        0x02, // ......0.
+        0x02, // ......0.
+        0x00, // ........
+        0x00  // ........
+    },
+    {
+        0x7C, // .00000..
+        0x82, // 0.....0.
+        0x82, // 0.....0.
+        0x82, // 0.....0.
+        0x82, // 0.....0.
+        0x82, // 0.....0.
+        0x6C, // .00.00..
+        0x82, // 0.....0.
+        0x82, // 0.....0.
+        0x82, // 0.....0.
+        0x82, // 0.....0.
+        0x82, // 0.....0.
+        0x00, // ........
+        0x00  // ........
+    },
+    {
+        0x7C, // .00000..
+        0x12, // ...0..0.
+        0x12, // ...0..0.
+        0x12, // ...0..0.
+        0x12, // ...0..0.
+        0x12, // ...0..0.
+        0x0C, // ....00..
+        0x12, // ...0..0.
+        0x12, // ...0..0.
+        0x12, // ...0..0.
+        0x12, // ...0..0.
+        0x12, // ...0..0.
+        0x7C, // .00000..
+        0x00  // ........
+    },
+    {
+        0x7C, // .00000..
+        0x80, // 0.......
+        0x80, // 0.......
+        0x80, // 0.......
+        0x80, // 0.......
+        0x80, // 0.......
+        0x00, // ........
+        0x80, // 0.......
+        0x80, // 0.......
+        0x80, // 0.......
+        0x80, // 0.......
+        0x80, // 0.......
+        0x7C, // .00000..
+        0x00  // ........
+    },
+    {
+        0x7C, // .00000..
+        0x12, // ...0..0.
+        0x12, // ...0..0.
+        0x12, // ...0..0.
+        0x12, // ...0..0.
+        0x12, // ...0..0.
+        0x00, // ........
+        0x12, // ...0..0.
+        0x12, // ...0..0.
+        0x12, // ...0..0.
+        0x12, // ...0..0.
+        0x12, // ...0..0.
+        0x7C, // .00000..
+        0x00  // ........
+    },
+    {
+        0x7C, // .00000..
+        0x80, // 0.......
+        0x80, // 0.......
+        0x80, // 0.......
+        0x80, // 0.......
+        0x80, // 0.......
+        0x60, // .00.....
+        0x80, // 0.......
+        0x80, // 0.......
+        0x80, // 0.......
+        0x80, // 0.......
+        0x80, // 0.......
+        0x7C, // .00000..
+        0x00  // ........
+    },
+    {
+        0x7C, // .00000..
+        0x80, // 0.......
+        0x80, // 0.......
+        0x80, // 0.......
+        0x80, // 0.......
+        0x80, // 0.......
+        0x60, // .00.....
+        0x80, // 0.......
+        0x80, // 0.......
+        0x80, // 0.......
+        0x80, // 0.......
+        0x80, // 0.......
+        0x00, // ........
+        0x00  // ........
+    },
+};
+
+// ........................
+// ....00000000000000......
+// .0.0000000000000000.0...
+// 000.00000000000000.000..
+// 000.......00.......000..
+// 000.0.....00.......000..
+// 000.00....00.......000..
+// 000.00....00.......000..
+// 000..0....00.......000..
+// 000..00...00.......000..
+// 000..00...00.......000..
+// 000...00..00.......000..
+// 000...00..00.......000..
+// 000....0..00.......000..
+// 000....00.00.......000..
+// 000.....0.00.......000..
+// 000.......00.......000..
+// .0.000000.00.000000.0...
+// ..00000000..00000000....
+// .0.000000.00.000000.0...
+// 000.......00.......000..
+// 000.......00.......000..
+// 000.......00.......000..
+// 000.......00.......000..
+// 000.......00.......000..
+// 000.......00.......000..
+// 000.......00.......000..
+// 000.......00.......000..
+// 000.......00.......000..
+// 000.......00.......000..
+// 000.......00.......000..
+// 000.......00.......000..
+// 000.00000000000000.000..
+// .0.0000000000000000.0...
+// ....00000000000000......
 
 static const uint8_t symbols[][16] = {
     { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,  },       //0x00,
@@ -691,88 +1018,173 @@ void draw_symbol(const uint8_t *buffer, uint16_t len, uint8_t color, uint8_t x, 
     ssd1681_write_array(&epd, buffer, len);
 }
 
-void draw_counter_example()
+// void draw_counter_example()
+// {
+//     uint8_t count = 0;
+//     uint8_t tens = 0;
+//     uint8_t ones = 0;
+//     uint8_t tens_last = 0;
+//     uint8_t ones_last = 0;
+//     while( 1 ) {
+//         gpio_set_out(0, 6, GPIO_OUT_HIGH);
+//
+//         tens = count / 10;
+//         ones = count % 10;
+//
+//         draw_symbol(segment_display_number[tens], 117, SSD1681_BLACK, 64, 50, 24, 39);
+//         draw_symbol(segment_display_number[ones], 117, SSD1681_BLACK, 104, 50, 24, 39);
+//         count++;
+//
+//         if(count > 60) {
+//             ssd1681_update_display(&epd);
+//             gpio_set_out(0, 0, GPIO_OUT_LOW);
+//             __delay_cycles(160000 * 200);
+//             count = 0;
+//         } else {
+//             ssd1681_partial_update_display(&epd);
+//             gpio_set_out(0, 0, GPIO_OUT_LOW);
+//             __delay_cycles(160000 * 70);
+//         }
+//     }
+// }
+//
+// void draw_counter_example_2()
+// {
+//     uint8_t count = 0;
+//     uint8_t tens = 0;
+//     uint8_t ones = 0;
+//     uint8_t tens_last = 0;
+//     uint8_t ones_last = 0;
+//     while( 1 ) {
+//         gpio_set_out(0, 0, GPIO_OUT_HIGH);
+//
+//         tens = count / 10;
+//         ones = count % 10;
+//
+//         uint8_t offset = 64;
+//         // write_char(0,0);
+//         const uint8_t *symbol = segment_display_number[tens];
+//         if(tens_last != tens) {
+//             draw_symbol(blank, 117, SSD1681_BLACK, offset, 50, 24, 39);
+//         } else {
+//             draw_symbol(symbol, 117, SSD1681_BLACK, offset, 50, 24, 39);
+//         }
+//         draw_symbol(blank, 117, SSD1681_BLACK, offset + 40, 50, 24, 39);
+//         ssd1681_partial_update_display(&epd);
+//
+//         // write_char(0,0);
+//         draw_symbol(blank, 117, SSD1681_RED, offset, 50, 24, 39);
+//         draw_symbol(blank, 117, SSD1681_RED, offset + 40, 50, 24, 39);
+//
+//         const uint8_t *word = segment_display_number[tens];
+//         draw_symbol(word, 117, SSD1681_BLACK, offset, 50, 24, 39);
+//
+//         word = segment_display_number[ones];
+//         draw_symbol(word, 117, SSD1681_BLACK, offset + 40, 50, 24, 39);
+//
+//         ones_last = ones;
+//         tens_last = tens;
+//
+//         count++;
+//
+//         gpio_set_out(0, 0, GPIO_OUT_LOW);
+//
+//         ssd1681_partial_update_display(&epd);
+//
+//         if(count > 60) {
+//             ssd1681_update_display(&epd);
+//             ssd1681_update_display(&epd);
+//             ssd1681_update_display(&epd);
+//             count = 0;
+//         }
+//
+//         counter++;
+//     }
+// }
+
+typedef struct num_t {
+    int16_t whole;
+    int16_t frac;
+} num;
+
+num split_float(float value, int8_t precision)
 {
-    uint8_t count = 0;
-    uint8_t tens = 0;
-    uint8_t ones = 0;
-    uint8_t tens_last = 0;
-    uint8_t ones_last = 0;
-    while( 1 ) {
-        gpio_set_out(0, 6, GPIO_OUT_HIGH);
+    float multiplier = 1.0;
+    while(precision > 0) {
+        multiplier *= 10.0;
+        precision--;
+    }
 
-        tens = count / 10;
-        ones = count % 10;
+    int16_t value_frac = (int16_t)((value - (int16_t)value) * multiplier);
+    num n = {(int16_t)value, value_frac};
+    return n;
+}
 
-        draw_symbol(segment_display_number[tens], 117, SSD1681_BLACK, 64, 50, 24, 39);
-        draw_symbol(segment_display_number[ones], 117, SSD1681_BLACK, 104, 50, 24, 39);
-        count++;
+void extract_digits(uint16_t number, uint8_t digits[5]) {
+    // Handle negative numbers just in case
+    if (number < 0) {
+        number = -number;
+    }
 
-        if(count > 60) {
-            ssd1681_update_display(&epd);
-            gpio_set_out(0, 6, GPIO_OUT_LOW);
-            __delay_cycles(160000 * 200);
-            count = 0;
-        } else {
-            ssd1681_partial_update_display(&epd);
-            gpio_set_out(0, 6, GPIO_OUT_LOW);
-            __delay_cycles(160000 * 70);
-        }
+    // Extract digits from right to left
+    for(uint8_t i = 4; i >= 0; i--) {
+        digits[i] = number % 10; // Get the last digit
+        number /= 10;            // Remove the last digit
     }
 }
 
-void draw_counter_example_2()
+/**
+ * @brief Base 2 logarithm implementation
+ * https://stackoverflow.com/questions/9411823/fast-log2float-x-implementation-c
+ * @param val Input value
+ * @return float log2(x) approximation
+ */
+float fast_log2(float val) {
+    union { float val; int32_t x; } u = { val };
+    register float log_2 = (float)(((u.x >> 23) & 255) - 128);
+    u.x   &= ~(255l << 23);
+    u.x   += 127l << 23;
+    // log_2 += ((-0.3358287811f) * u.val + 2.0f) * u.val  -0.65871759316667f;
+    log_2 += ((-0.34484843f) * u.val + 2.02466578f) * u.val  - 0.67487759f;
+    return (log_2);
+}
+
+/**
+ * @brief Base 10 logarithm implementation
+ * @param val Input value
+ * @return float log10(x) approximation
+ */
+float fast_log(float val)
 {
-    uint8_t count = 0;
-    uint8_t tens = 0;
-    uint8_t ones = 0;
-    uint8_t tens_last = 0;
-    uint8_t ones_last = 0;
-    while( 1 ) {
-        gpio_set_out(0, 6, GPIO_OUT_HIGH);
+    return (fast_log2 (val) * 0.69314718f);
+}
 
-        tens = count / 10;
-        ones = count % 10;
 
-        uint8_t offset = 64;
-        // write_char(0,0);
-        const uint8_t *symbol = segment_display_number[tens];
-        if(tens_last != tens) {
-            draw_symbol(blank, 117, SSD1681_BLACK, offset, 50, 24, 39);
-        } else {
-            draw_symbol(symbol, 117, SSD1681_BLACK, offset, 50, 24, 39);
-        }
-        draw_symbol(blank, 117, SSD1681_BLACK, offset + 40, 50, 24, 39);
-        ssd1681_partial_update_display(&epd);
+/**
+ * @brief Calculates dew point in degrees Celsius (Magnus-Tetons formula). Allows
+ * calculations for values between -40C and 60C with an uncertainty of 0.35C.
+ * @param temp Temperature in degrees celsius
+ * @param rh Relative humidity (percentage)
+ * @return float dew point approximation
+ */
+float calculate_dew_point(float temp, float rh)
+{
+    float a = 17.27;
+    float b = 237.7;
 
-        // write_char(0,0);
-        draw_symbol(blank, 117, SSD1681_RED, offset, 50, 24, 39);
-        draw_symbol(blank, 117, SSD1681_RED, offset + 40, 50, 24, 39);
+    float alpha = ((a * temp) / (b + temp)) + fast_log((double)(rh / 100.0));
+    return (b * alpha) / (a - alpha);
+}
 
-        const uint8_t *word = segment_display_number[tens];
-        draw_symbol(word, 117, SSD1681_BLACK, offset, 50, 24, 39);
 
-        word = segment_display_number[ones];
-        draw_symbol(word, 117, SSD1681_BLACK, offset + 40, 50, 24, 39);
-
-        ones_last = ones;
-        tens_last = tens;
-
-        count++;
-
-        gpio_set_out(0, 6, GPIO_OUT_LOW);
-
-        ssd1681_partial_update_display(&epd);
-
-        if(count > 60) {
-            ssd1681_update_display(&epd);
-            ssd1681_update_display(&epd);
-            ssd1681_update_display(&epd);
-            count = 0;
-        }
-
-        counter++;
-    }
+/**
+ * @brief Convers degrees celsius to degrees farenheit
+ * @param temp Temperature in degrees celsius
+ * @return float temperature in degrees farenheit
+ */
+float convert_celsius_to_farenheit(float temp)
+{
+    return ((9 * temp) / 5) + 32;
 }
 
 int run( void )
@@ -788,15 +1200,19 @@ int run( void )
 
     // Enable pin 0 on port 1
     gpio_set_direction(GPIO_BANK(SSD1681_LED), GPIO_PIN(SSD1681_LED), GPIO_DIR_OUT);
-    gpio_set_direction(0, 6, GPIO_DIR_OUT);
+    gpio_set_direction(0, 0, GPIO_DIR_OUT);
     gpio_set_out(GPIO_BANK(SSD1681_LED), GPIO_PIN(SSD1681_LED), GPIO_OUT_LOW);
-    gpio_set_out(0, 6, GPIO_OUT_LOW);
+    gpio_set_out(0, 0, GPIO_OUT_LOW);
 
     // Configure P1.1 (SOMI), P1.2 (SIMO), P1.4 (CLK) for USCI_A0 function
     P1SEL |= BIT1 | BIT2 | BIT4;
     P1SEL2 |= BIT1 | BIT2 | BIT4;
 
     error = spi_initialize();
+
+    // Configure P1.6 (SCL) and P1.7 (SDA)
+    P1SEL  |= BIT6 + BIT7;
+    P1SEL2 |= BIT6 + BIT7;
 
     ssd1681_initialize(&epd,
                        SSD1681_CHIP_SELECT,
@@ -805,10 +1221,13 @@ int run( void )
                        SSD1681_RESET);
     ssd1681_initialize_display_full(&epd);
 
-    gpio_set_out(0, 6, GPIO_OUT_HIGH);
+    error = i2c_initialize(0);
+    sht3xdis_i2c_device ht_sensor = {0x00, 0x44};
+
+    gpio_set_out(0, 0, GPIO_OUT_HIGH);
     ssd1681_fill_screen_red(&epd, 0x00);
     ssd1681_fill_screen(&epd, 0x00);
-    gpio_set_out(0, 6, GPIO_OUT_LOW);
+    gpio_set_out(0, 0, GPIO_OUT_LOW);
 
     // Configure P1.3 for interrupt
     P1IES |= BIT3;   // P1.3 Hi/low transition (falling edge for button press)
@@ -817,7 +1236,118 @@ int run( void )
 
     _BIS_SR(GIE);
 
-    draw_counter_example();
+    uint8_t t[5] = {10, 11, 12, 13, 14};
+
+    while(1) {
+        sht3xdis_measurement measurement = {0x00, 0x00};
+        measurement = sht3xdis_singleshot_measurement(&ht_sensor, SHT3XDIS_REPEATABILITY_HIGH, 0x1);
+
+        float temp_c = sht3xdis_convert_raw_to_celsius(measurement.raw_temperature);
+        float temp_f = sht3xdis_convert_raw_to_farenheit(measurement.raw_temperature);
+        float rh     = sht3xdis_convert_raw_to_relative_humidity(measurement.raw_relative_humidity);
+        float dp     = calculate_dew_point(temp_c, rh);
+        float dp_f   = convert_celsius_to_farenheit(dp);
+
+        // Print temperature data to console
+        //num n = split_float(temp_f, 2);
+        //snprintf(t, sizeof(t), " T: %d.%02dF", n.whole, n.frac);
+        // extract_digits((uint16_t)(temp_f), t);
+
+        const char *str_temp = "TEMPERATURE";
+        for(uint8_t i = 0; i < strlen(str_temp); i++) {
+            const uint8_t *symbol = symbols[str_temp[i]];
+            draw_symbol(symbol, 16, SSD1681_BLACK, (8*i), 1, 8, 16);
+        }
+
+        str_temp = "RELATIVE HUMIDITY";
+        for(uint8_t i = 0; i < strlen(str_temp); i++) {
+            const uint8_t *symbol = symbols[str_temp[i]];
+            draw_symbol(symbol, 16, SSD1681_BLACK, (8*i), 59, 8, 16);
+        }
+
+        str_temp = "DEW POINT";
+        for(uint8_t i = 0; i < strlen(str_temp); i++) {
+            const uint8_t *symbol = symbols[str_temp[i]];
+            draw_symbol(symbol, 16, SSD1681_BLACK, (8*i), 117, 8, 16);
+        }
+
+        int32_t number = (int32_t)(temp_f * 100.0);
+        // Extract digits from right to left
+        for(int8_t i = 4; i >= 0; i--) {
+            t[i] = number % 10; // Get the last digit
+            number /= 10;            // Remove the last digit
+        }
+
+        bool ignore_zero = true;
+        for(uint32_t i = 0; i < sizeof(t); i++) {
+            uint8_t val = t[i];
+            if(val > 0) {
+                ignore_zero = false;
+            }
+
+            if(val == 0 && ignore_zero) {
+
+            } else {
+                const uint8_t *symbol = segment_display_number[val];
+                draw_symbol(symbol, 117, SSD1681_BLACK, (32*i), 18, 24, 39);
+                // const uint8_t *symbol = small_segments[val];
+                // draw_symbol(symbol, 14, SSD1681_BLACK, (8*i), 50, 8, 14);
+            }
+        }
+
+        number = (int32_t)(rh * 100.0);
+        // Extract digits from right to left
+        for(int8_t i = 4; i >= 0; i--) {
+            t[i] = number % 10; // Get the last digit
+            number /= 10;            // Remove the last digit
+        }
+
+        ignore_zero = true;
+        for(uint32_t i = 0; i < sizeof(t); i++) {
+            uint8_t val = t[i];
+            if(val > 0) {
+                ignore_zero = false;
+            }
+
+            if(val == 0 && ignore_zero) {
+
+            } else {
+                const uint8_t *symbol = segment_display_number[val];
+                draw_symbol(symbol, 117, SSD1681_BLACK, (32*i), 77, 24, 39);
+                // const uint8_t *symbol = small_segments[val];
+                // draw_symbol(symbol, 14, SSD1681_BLACK, (8*i), 50, 8, 14);
+            }
+        }
+
+        number = (int32_t)(dp_f * 100.0);
+        // Extract digits from right to left
+        for(int8_t i = 4; i >= 0; i--) {
+            t[i] = number % 10; // Get the last digit
+            number /= 10;            // Remove the last digit
+        }
+
+        ignore_zero = true;
+        for(uint32_t i = 0; i < sizeof(t); i++) {
+            uint8_t val = t[i];
+            if(val > 0) {
+                ignore_zero = false;
+            }
+
+            if(val == 0 && ignore_zero) {
+
+            } else {
+                const uint8_t *symbol = segment_display_number[val];
+                draw_symbol(symbol, 117, SSD1681_BLACK, (32*i), 136, 24, 39);
+                // const uint8_t *symbol = small_segments[val];
+                // draw_symbol(symbol, 14, SSD1681_BLACK, (8*i), 50, 8, 14);
+            }
+        }
+
+        ssd1681_partial_update_display(&epd);
+    }
+
+
+    // draw_counter_example();
     // draw_counter_example_2();
 
     return error;
