@@ -3,6 +3,7 @@
 #include "core/spi.h"
 #include "core/i2c.h"
 #include "core/drivers/ssd1681.h"
+#include "core/drivers/adxl345.h"
 #include "core/sht3xdis.h"
 
 // Project headers
@@ -18,7 +19,6 @@
 #define SSD1681_RESET           GPIO(1, 1)
 #define SSD1681_BUSY            GPIO(1, 2)
 
-static ssd1681_spi_device epd;
 static uint8_t screen_byte = 0x00;
 static uint8_t row = 0;
 static uint16_t counter = 0;
@@ -969,53 +969,84 @@ __interrupt void Port_1_ISR(void)
     // to check their respective P1IFG bits.
 }
 
-void write_char(uint16_t x_pixel_start, uint16_t y_pixel_start)
+// void write_char(uint16_t x_pixel_start, uint16_t y_pixel_start)
+// {
+//     const uint8_t *word = NULL;
+//
+//     // uint8_t offset = 8;
+//     // for(uint8_t i = 0; i <= 5; i++) {
+//     //     ssd1681_set_partial_ram_area(&epd, (32 * i) + offset, 50, 24, 39);
+//     //     word = segment_display_number[i];
+//     //     ssd1681_write_buffer(&epd, word, 117);
+//     // }
+//
+//     const char date[] = " FRIDAY 05/29";
+//     for(uint32_t i = 0; i < strlen(date); i++) {
+//         ssd1681_set_partial_ram_area(&epd, (8*i), 0, 8, 16);
+//         word = symbols[date[i]];
+//         ssd1681_write(&epd, SPI_WRITE_TYPE_COMMAND, SSD1681_COMMAND_WRITE_RAM_BW);   //write RAM for black(0)/white (1)
+//         ssd1681_write_buffer(&epd, word, 16);
+//         ssd1681_write(&epd, SPI_WRITE_TYPE_COMMAND, SSD1681_COMMAND_WRITE_RAM_RED);   //write RAM for black(0)/white (1)
+//         ssd1681_write_buffer(&epd, word, 16);
+//     }
+//
+//     // ssd1681_partial_refresh(&epd);
+//     // ssd1681_partial_update_display(&epd);
+//
+//     // ssd1681_write(&epd, SPI_WRITE_TYPE_COMMAND, SSD1681_COMMAND_DISPLAY_UPDATE); //Display Update Control
+//     // ssd1681_write(&epd, SPI_WRITE_TYPE_DATA, 0xF8);
+//     // ssd1681_write(&epd, SPI_WRITE_TYPE_COMMAND, SSD1681_COMMAND_MASTER_ACTIVATION);  //Activate Display Update Sequence
+//
+//     // if(ssd1681_is_busy(&epd)) {
+//     //     __delay_cycles(160000 * 200);
+//     // }
+//
+//     // ssd1681_write(&epd, SPI_WRITE_TYPE_COMMAND, SSD1681_COMMAND_DISPLAY_UPDATE); //Display Update Control
+//     // ssd1681_write(&epd, SPI_WRITE_TYPE_DATA, 0xFC);
+//
+//     // ssd1681_update_display(&epd);
+// }
+
+void draw_symbol(ssd1681_spi_device *epd, const uint8_t *buffer, uint16_t len, uint8_t color, uint8_t x, uint8_t y, uint8_t width, uint8_t height)
 {
-    const uint8_t *word = NULL;
-
-    // uint8_t offset = 8;
-    // for(uint8_t i = 0; i <= 5; i++) {
-    //     ssd1681_set_partial_ram_area(&epd, (32 * i) + offset, 50, 24, 39);
-    //     word = segment_display_number[i];
-    //     ssd1681_write_buffer(&epd, word, 117);
-    // }
-
-    const char date[] = " FRIDAY 05/29";
-    for(uint32_t i = 0; i < strlen(date); i++) {
-        ssd1681_set_partial_ram_area(&epd, (8*i), 0, 8, 16);
-        word = symbols[date[i]];
-        ssd1681_write(&epd, SPI_WRITE_TYPE_COMMAND, SSD1681_COMMAND_WRITE_RAM_BW);   //write RAM for black(0)/white (1)
-        ssd1681_write_buffer(&epd, word, 16);
-        ssd1681_write(&epd, SPI_WRITE_TYPE_COMMAND, SSD1681_COMMAND_WRITE_RAM_RED);   //write RAM for black(0)/white (1)
-        ssd1681_write_buffer(&epd, word, 16);
+    ssd1681_set_partial_ram_area(epd, x, y, width, height);
+    if(color == SSD1681_BLACK) {
+        ssd1681_write(epd, SPI_WRITE_TYPE_COMMAND, SSD1681_COMMAND_WRITE_RAM_BW);   //write RAM for black(0)/white (1)
+    } else if(color == SSD1681_RED) {
+        ssd1681_write(epd, SPI_WRITE_TYPE_COMMAND, SSD1681_COMMAND_WRITE_RAM_RED);   //write RAM for black(0)/white (1)
     }
-
-    // ssd1681_partial_refresh(&epd);
-    // ssd1681_partial_update_display(&epd);
-
-    // ssd1681_write(&epd, SPI_WRITE_TYPE_COMMAND, SSD1681_COMMAND_DISPLAY_UPDATE); //Display Update Control
-    // ssd1681_write(&epd, SPI_WRITE_TYPE_DATA, 0xF8);
-    // ssd1681_write(&epd, SPI_WRITE_TYPE_COMMAND, SSD1681_COMMAND_MASTER_ACTIVATION);  //Activate Display Update Sequence
-
-    // if(ssd1681_is_busy(&epd)) {
-    //     __delay_cycles(160000 * 200);
-    // }
-
-    // ssd1681_write(&epd, SPI_WRITE_TYPE_COMMAND, SSD1681_COMMAND_DISPLAY_UPDATE); //Display Update Control
-    // ssd1681_write(&epd, SPI_WRITE_TYPE_DATA, 0xFC);
-
-    // ssd1681_update_display(&epd);
+    ssd1681_write_array(epd, buffer, len);
 }
 
-void draw_symbol(const uint8_t *buffer, uint16_t len, uint8_t color, uint8_t x, uint8_t y, uint8_t width, uint8_t height)
+void draw_string(ssd1681_spi_device *epd, const char *str, uint8_t color, uint8_t x, uint8_t y)
 {
-    ssd1681_set_partial_ram_area(&epd, x, y, width, height);
-    if(color == SSD1681_BLACK) {
-        ssd1681_write(&epd, SPI_WRITE_TYPE_COMMAND, SSD1681_COMMAND_WRITE_RAM_BW);   //write RAM for black(0)/white (1)
-    } else if(color == SSD1681_RED) {
-        ssd1681_write(&epd, SPI_WRITE_TYPE_COMMAND, SSD1681_COMMAND_WRITE_RAM_RED);   //write RAM for black(0)/white (1)
+    uint8_t len = strlen(str);
+    if(len > 25) {
+        len = 25;
     }
-    ssd1681_write_array(&epd, buffer, len);
+
+    for(uint8_t i = 0; i < len; i++) {
+        const uint8_t *symbol = symbols[str[i]];
+        draw_symbol(epd, symbol, 16, color, x + (8*i), y, 8, 16);
+    }
+}
+
+void draw_seven_segment(ssd1681_spi_device *epd, const uint8_t number[5], uint8_t color, uint8_t x, uint8_t y)
+{
+    bool ignore_zero = true;
+    for(uint32_t i = 0; i < 5; i++) {
+        uint8_t val = number[i];
+        if(val > 0) {
+            ignore_zero = false;
+        }
+
+        if(val == 0 && ignore_zero) {
+
+        } else {
+            const uint8_t *symbol = segment_display_number[val];
+            draw_symbol(epd, symbol, 117, color, x + (32*i), y, 24, 39);
+        }
+    }
 }
 
 // void draw_counter_example()
@@ -1127,7 +1158,7 @@ void extract_digits(uint16_t number, uint8_t digits[5]) {
     }
 
     // Extract digits from right to left
-    for(uint8_t i = 4; i >= 0; i--) {
+    for(int8_t i = 4; i >= 0; i--) {
         digits[i] = number % 10; // Get the last digit
         number /= 10;            // Remove the last digit
     }
@@ -1187,6 +1218,23 @@ float convert_celsius_to_farenheit(float temp)
     return ((9 * temp) / 5) + 32;
 }
 
+void initialize_accelerometer(adxl345_i2c_device *device)
+{
+    uint8_t devid = adxl345_i2c_get_devid(device);
+    // adxl345_i2c_read(device, ADXL345_REG_DEVID, &devid, sizeof(devid));
+    if(devid == ADXL345_DEVICE_ID) {
+        // Device ID matches
+    }
+
+    // adxl345_power_ctl ctl = {.value = 0};
+    // ctl.f.measure = 1;
+    // adxl345_i2c_set_power_ctl(device, &ctl);
+
+    // adxl345_data_format fmt = {.value = 0};
+    // fmt.f.range = ADXL345_RANGE_16G;
+    // adxl345_i2c_set_data_format(device, &fmt);
+}
+
 int run( void )
 {
     int32_t error = 0;
@@ -1208,12 +1256,14 @@ int run( void )
     P1SEL |= BIT1 | BIT2 | BIT4;
     P1SEL2 |= BIT1 | BIT2 | BIT4;
 
-    error = spi_initialize();
-
     // Configure P1.6 (SCL) and P1.7 (SDA)
     P1SEL  |= BIT6 + BIT7;
     P1SEL2 |= BIT6 + BIT7;
 
+    // Initialize SPI and attached devices
+    error = spi_initialize();
+
+    ssd1681_spi_device epd;
     ssd1681_initialize(&epd,
                        SSD1681_CHIP_SELECT,
                        SSD1681_DATA_COMMAND,
@@ -1221,13 +1271,27 @@ int run( void )
                        SSD1681_RESET);
     ssd1681_initialize_display_full(&epd);
 
+    // Initialize I2C and attached devices
     error = i2c_initialize(0);
     sht3xdis_i2c_device ht_sensor = {0x00, 0x44};
+    adxl345_i2c_device acl_sensor = {0x00, ADXL345_I2C_ADDRESS(0)};
 
     gpio_set_out(0, 0, GPIO_OUT_HIGH);
     ssd1681_fill_screen_red(&epd, 0x00);
     ssd1681_fill_screen(&epd, 0x00);
     gpio_set_out(0, 0, GPIO_OUT_LOW);
+
+    uint8_t devid = adxl345_i2c_get_devid(&acl_sensor);
+    if(devid == ADXL345_DEVICE_ID) {
+        const char str_temp[] = "ADXL345: OK";
+        draw_string(&epd, str_temp, SSD1681_BLACK, 0, 1);
+    } else {
+        const char str_temp[] = "ADXL345: FAILED";
+        draw_string(&epd, str_temp, SSD1681_BLACK, 0, 1);
+    }
+
+    ssd1681_update_display(&epd);
+    __delay_cycles(160000 * 200);
 
     // Configure P1.3 for interrupt
     P1IES |= BIT3;   // P1.3 Hi/low transition (falling edge for button press)
@@ -1248,102 +1312,31 @@ int run( void )
         float dp     = calculate_dew_point(temp_c, rh);
         float dp_f   = convert_celsius_to_farenheit(dp);
 
-        // Print temperature data to console
-        //num n = split_float(temp_f, 2);
-        //snprintf(t, sizeof(t), " T: %d.%02dF", n.whole, n.frac);
-        // extract_digits((uint16_t)(temp_f), t);
-
         const char *str_temp = "TEMPERATURE";
-        for(uint8_t i = 0; i < strlen(str_temp); i++) {
-            const uint8_t *symbol = symbols[str_temp[i]];
-            draw_symbol(symbol, 16, SSD1681_BLACK, (8*i), 1, 8, 16);
-        }
+        draw_string(&epd, str_temp, SSD1681_BLACK, 0, 1);
 
         str_temp = "RELATIVE HUMIDITY";
-        for(uint8_t i = 0; i < strlen(str_temp); i++) {
-            const uint8_t *symbol = symbols[str_temp[i]];
-            draw_symbol(symbol, 16, SSD1681_BLACK, (8*i), 59, 8, 16);
-        }
+        draw_string(&epd, str_temp, SSD1681_BLACK, 0, 59);
 
         str_temp = "DEW POINT";
-        for(uint8_t i = 0; i < strlen(str_temp); i++) {
-            const uint8_t *symbol = symbols[str_temp[i]];
-            draw_symbol(symbol, 16, SSD1681_BLACK, (8*i), 117, 8, 16);
-        }
+        draw_string(&epd, str_temp, SSD1681_BLACK, 0, 118);
 
         int32_t number = (int32_t)(temp_f * 100.0);
-        // Extract digits from right to left
-        for(int8_t i = 4; i >= 0; i--) {
-            t[i] = number % 10; // Get the last digit
-            number /= 10;            // Remove the last digit
-        }
-
-        bool ignore_zero = true;
-        for(uint32_t i = 0; i < sizeof(t); i++) {
-            uint8_t val = t[i];
-            if(val > 0) {
-                ignore_zero = false;
-            }
-
-            if(val == 0 && ignore_zero) {
-
-            } else {
-                const uint8_t *symbol = segment_display_number[val];
-                draw_symbol(symbol, 117, SSD1681_BLACK, (32*i), 18, 24, 39);
-                // const uint8_t *symbol = small_segments[val];
-                // draw_symbol(symbol, 14, SSD1681_BLACK, (8*i), 50, 8, 14);
-            }
-        }
+        extract_digits(number, t);
+        draw_seven_segment(&epd, t, SSD1681_BLACK, 0, 18);
 
         number = (int32_t)(rh * 100.0);
-        // Extract digits from right to left
-        for(int8_t i = 4; i >= 0; i--) {
-            t[i] = number % 10; // Get the last digit
-            number /= 10;            // Remove the last digit
-        }
+        extract_digits(number, t);
+        draw_seven_segment(&epd, t, SSD1681_BLACK, 0, 77);
 
-        ignore_zero = true;
-        for(uint32_t i = 0; i < sizeof(t); i++) {
-            uint8_t val = t[i];
-            if(val > 0) {
-                ignore_zero = false;
-            }
-
-            if(val == 0 && ignore_zero) {
-
-            } else {
-                const uint8_t *symbol = segment_display_number[val];
-                draw_symbol(symbol, 117, SSD1681_BLACK, (32*i), 77, 24, 39);
-                // const uint8_t *symbol = small_segments[val];
-                // draw_symbol(symbol, 14, SSD1681_BLACK, (8*i), 50, 8, 14);
-            }
-        }
 
         number = (int32_t)(dp_f * 100.0);
-        // Extract digits from right to left
-        for(int8_t i = 4; i >= 0; i--) {
-            t[i] = number % 10; // Get the last digit
-            number /= 10;            // Remove the last digit
-        }
-
-        ignore_zero = true;
-        for(uint32_t i = 0; i < sizeof(t); i++) {
-            uint8_t val = t[i];
-            if(val > 0) {
-                ignore_zero = false;
-            }
-
-            if(val == 0 && ignore_zero) {
-
-            } else {
-                const uint8_t *symbol = segment_display_number[val];
-                draw_symbol(symbol, 117, SSD1681_BLACK, (32*i), 136, 24, 39);
-                // const uint8_t *symbol = small_segments[val];
-                // draw_symbol(symbol, 14, SSD1681_BLACK, (8*i), 50, 8, 14);
-            }
-        }
+        extract_digits(number, t);
+        draw_seven_segment(&epd, t, SSD1681_BLACK, 0, 136);
 
         ssd1681_partial_update_display(&epd);
+        // ssd1681_update_display(&epd);
+        // __delay_cycles(160000 * 200);
     }
 
 

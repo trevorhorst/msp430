@@ -34,6 +34,7 @@ set(SOURCE ${SOURCE}
     src/ssd1306.c
     src/ring_buffer.c
     src/sht3xdis.c
+    src/drivers/adxl345.c
     src/drivers/ssd1681.c
     ${EXTRA_SOURCE}
     )
@@ -45,6 +46,7 @@ set(INCLUDE ${INCLUDE}
     include/core/ssd1306.h
     include/core/ring_buffer.h
     include/core/sht3xdis.h
+    include/core/drivers/adxl345.h
     include/core/drivers/ssd1681.h
     ${EXTRA_INCLUDE}
     )
