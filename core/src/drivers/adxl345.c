@@ -8,6 +8,20 @@ int32_t adxl345_i2c_write_byte(adxl345_i2c_device *device, uint8_t address, uint
     return i2c_write(device->bus, device->address, buffer, sizeof(buffer));
 }
 
+int32_t adxl345_i2c_write_byte_verify(adxl345_i2c_device *device, uint8_t address, uint8_t byte)
+{
+    int32_t verified = 0;
+    adxl345_i2c_write_byte(device, address, byte);
+
+    uint8_t read_back = 0x00;
+    adxl345_i2c_read(device, address, &read_back, sizeof(read_back));
+    if(read_back == byte) {
+        verified = 1;
+    }
+
+    return verified;
+}
+
 int32_t adxl345_i2c_read(adxl345_i2c_device *device, uint8_t address, uint8_t *buffer, uint32_t buffer_length)
 {
     i2c_write(device->bus, device->address, &address, sizeof(address));

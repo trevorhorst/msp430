@@ -957,12 +957,13 @@ __interrupt void Port_1_ISR(void)
         // You might introduce a short delay or use a timer to debounce.
         // For simple debouncing:
         __delay_cycles(160000 * 5); // Small delay to ignore bounce
-        while (!(P1IN & BIT3)); // Wait for button release (if it's a press event)
-        P1IFG &= ~BIT3; // Clear flag again after debouncing if waiting for release
-        __delay_cycles(160000 * 5); // Small delay to ignore bounce
+        // while (!(P1IN & BIT3)); // Wait for button release (if it's a press event)
+        // P1IFG &= ~BIT3; // Clear flag again after debouncing if waiting for release
+        // __delay_cycles(160000 * 5); // Small delay to ignore bounce
         // --- IMPORTANT: Clear the interrupt flag! ---
         // If you don't clear the flag, the interrupt will trigger repeatedly.
         P1IFG &= ~BIT3; // Clear P1.3 interrupt flag
+        __bic_SR_register_on_exit(LPM1_bits);
     }
 
     // If you had other pins on Port 1 interrupting, you'd add more `if` statements
@@ -1220,11 +1221,21 @@ float convert_celsius_to_farenheit(float temp)
 
 void initialize_accelerometer(adxl345_i2c_device *device)
 {
-    uint8_t devid = adxl345_i2c_get_devid(device);
-    // adxl345_i2c_read(device, ADXL345_REG_DEVID, &devid, sizeof(devid));
-    if(devid == ADXL345_DEVICE_ID) {
-        // Device ID matches
-    }
+    // Clear the interrupt register to start
+    uint8_t dummy = 0;
+    adxl345_i2c_read(device, ADXL345_REG_INT_SOURCE, &dummy, sizeof(dummy));
+
+    adxl345_i2c_write_byte(device, ADXL345_REG_POWER_CTL, 0x00);
+    adxl345_i2c_write_byte(device, ADXL345_REG_THRESH_TAP, 0x28);
+    adxl345_i2c_write_byte(device, ADXL345_REG_DUR, 0x30);
+    adxl345_i2c_write_byte(device, ADXL345_REG_LATENT, 0x50);
+    adxl345_i2c_write_byte(device, ADXL345_REG_WINDOW, 0xA0);
+
+    adxl345_i2c_write_byte(device, ADXL345_REG_TAP_AXES, 0x09);
+    adxl345_i2c_write_byte(device, ADXL345_REG_BW_RATE, 0x0C);
+    adxl345_i2c_write_byte(device, ADXL345_REG_INT_MAP, 0x00);
+    adxl345_i2c_write_byte(device, ADXL345_REG_INT_ENABLE, 0x20);
+    adxl345_i2c_write_byte(device, ADXL345_REG_POWER_CTL, 0x08);
 
     // adxl345_power_ctl ctl = {.value = 0};
     // ctl.f.measure = 1;
@@ -1244,7 +1255,7 @@ int run( void )
     DCOCTL = CALDCO_16MHZ;
 
     gpio_set_direction(0, 3, GPIO_DIR_IN);
-    gpio_set_resistor(0, 3, true, GPIO_RESISTOR_PULLUP);
+    gpio_set_resistor(0, 3, true, GPIO_RESISTOR_PULLDOWN);
 
     // Enable pin 0 on port 1
     gpio_set_direction(GPIO_BANK(SSD1681_LED), GPIO_PIN(SSD1681_LED), GPIO_DIR_OUT);
@@ -1283,8 +1294,13 @@ int run( void )
 
     uint8_t devid = adxl345_i2c_get_devid(&acl_sensor);
     if(devid == ADXL345_DEVICE_ID) {
-        const char str_temp[] = "ADXL345: OK";
+        const char *str_temp = "ADXL345: OK";
         draw_string(&epd, str_temp, SSD1681_BLACK, 0, 1);
+        initialize_accelerometer(&acl_sensor);
+        // if(adxl345_i2c_write_byte_verify(&acl_sensor, ADXL345_REG_THRESH_TAP, 0x28)) {
+        //     str_temp = "THRESH TAP: OK";
+        //     draw_string(&epd, str_temp, SSD1681_BLACK, 0, 18);
+        // }
     } else {
         const char str_temp[] = "ADXL345: FAILED";
         draw_string(&epd, str_temp, SSD1681_BLACK, 0, 1);
@@ -1294,8 +1310,9 @@ int run( void )
     __delay_cycles(160000 * 200);
 
     // Configure P1.3 for interrupt
-    P1IES |= BIT3;   // P1.3 Hi/low transition (falling edge for button press)
+    // P1IES |= BIT3;   // P1.3 Hi/low transition (falling edge for button press)
     P1IFG &= ~BIT3;  // Clear P1.3 interrupt flag (important!)
+    P1IES &= ~BIT3;  // Low/Hi transition (rising edge for inerrupt detect)
     P1IE  |= BIT3;    // Enable P1.3 interrupt
 
     _BIS_SR(GIE);
@@ -1334,9 +1351,13 @@ int run( void )
         extract_digits(number, t);
         draw_seven_segment(&epd, t, SSD1681_BLACK, 0, 136);
 
-        ssd1681_partial_update_display(&epd);
-        // ssd1681_update_display(&epd);
-        // __delay_cycles(160000 * 200);
+        //ssd1681_partial_update_display(&epd);
+        ssd1681_update_display(&epd);
+
+        __bis_SR_register(LPM1_bits + GIE);
+
+        uint8_t dummy = 0;
+        adxl345_i2c_read(&acl_sensor, ADXL345_REG_INT_SOURCE, &dummy, sizeof(dummy));
     }
 
 

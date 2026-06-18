@@ -9,7 +9,15 @@
 // Register map
 #define ADXL345_REG_DEVID       0x00
 #define ADXL345_REG_THRESH_TAP  0x1D
+#define ADXL345_REG_DUR			0x21
+#define ADXL345_REG_LATENT  	0x22
+#define ADXL345_REG_WINDOW      0x23
+#define ADXL345_REG_TAP_AXES    0x2A
+#define ADXL345_REG_BW_RATE     0x2C
 #define ADXL345_REG_POWER_CTL   0x2D
+#define ADXL345_REG_INT_ENABLE	0x2E
+#define ADXL345_REG_INT_MAP		0x2F
+#define ADXL345_REG_INT_SOURCE	0x30
 #define ADXL345_REG_DATA_FORMAT 0x31
 #define ADXL345_REG_DATAX0      0x32
 #define ADXL345_REG_DATAX1      0x33
@@ -72,6 +80,7 @@ typedef union adxl345_data_t {
  * @return int32_t Number of bytes written
  */
 int32_t adxl345_i2c_write_byte(adxl345_i2c_device *device, uint8_t address, uint8_t byte);
+int32_t adxl345_i2c_write_byte_verify(adxl345_i2c_device *device, uint8_t address, uint8_t byte);
 int32_t adxl345_i2c_read(adxl345_i2c_device *device, uint8_t address, uint8_t *buffer, uint32_t buffer_length);
 
 /**
