@@ -1,0 +1,59 @@
+cmake_minimum_required(VERSION 3.5)
+
+project(
+    hwlib
+    VERSION 0.1.0
+    DESCRIPTION "MSP430FR2433 Hardware Library"
+    LANGUAGES C ASM
+    )
+
+# if(USE_SPI)
+#     set(EXTRA_SOURCE ${EXTRA_SOURCE}
+#         src/spi.c
+#     )
+# 
+#     set(EXTRA_INCLUDE ${EXTRA_INCLUDE}
+#         include/hwlib/spi.h
+#     )
+# endif()
+
+set(
+    INCLUDE ${INCLUDE}
+    # include/hwlib/flash.h
+    include/hwlib/gpio.h
+    # include/hwlib/i2c.h
+    # include/hwlib/timer.h
+    # include/hwlib/uart.h
+    # include/hwlib/usci.h
+    # ${EXTRA_INCLUDE}
+    )
+
+set(
+    SOURCE ${SOURCE}
+    # src/flash.c
+    src/gpio.c
+    # src/i2c.c
+    # src/timer.c
+    # src/uart.c
+    # src/usci.c
+    # ${EXTRA_SOURCE}
+    )
+
+add_library(
+    ${PROJECT_NAME}
+    STATIC
+        ${INCLUDE}
+        ${SOURCE}
+    )
+
+target_include_directories(
+    ${PROJECT_NAME}
+    PRIVATE
+        $ENV{HOME}/ti/msp430-gcc/include
+)
+
+target_include_directories(
+    ${PROJECT_NAME} PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include>
+    )

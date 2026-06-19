@@ -28,7 +28,7 @@ endif()
 
 
 set(SOURCE ${SOURCE}
-    src/font.s
+    # src/font.s
     src/i2c.c
     src/uart.c
     src/ssd1306.c
@@ -63,12 +63,6 @@ target_link_libraries(
     PUBLIC
         hwlib
     )
-
-target_include_directories(
-    ${PROJECT_NAME}
-    PRIVATE
-        $ENV{HOME}/ti/msp430-gcc/include
-)
 
 target_include_directories(
     ${PROJECT_NAME} PUBLIC

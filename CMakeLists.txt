@@ -1,12 +1,7 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.15)
 
 # Stop CMake from trying to run the test executable
 set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
-
-# Add compiler options, this needs to be setup before the project call
-set( CMAKE_C_FLAGS
-    "${CMAKE_C_FLAGS} -mmcu=msp430g2553 -std=c99 -O2"
-    )
 
 project(
     msp430
@@ -30,7 +25,7 @@ endif()
 
 add_subdirectory(app)
 add_subdirectory(projects/${TARGET_PROJECT})
-add_subdirectory(core)
+# add_subdirectory(core)
 add_subdirectory(hwlib/${TARGET_HWLIB})
 
 if( USE_GPIO )
