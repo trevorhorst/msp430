@@ -5,7 +5,7 @@
  * project.
  * ****************************************************************************/
 
-#include <msp430fr2433.h>
+#include <msp430.h>
 
 /**
  * @brief Execute flow control for the project

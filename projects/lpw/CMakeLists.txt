@@ -1,8 +1,9 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.15)
 project(lpw
     LANGUAGES C ASM
     )
 
+option( USE_GPIO " Use optional GPIO library" ON )
 # option( USE_I2C "Use optional I2C library" ON )
 # option( USE_UART "Use optional UART library" ON )
 # option( USE_SSD1306 "Use optional SSD1306 library" ON )
@@ -28,13 +29,8 @@ add_library(
 target_link_libraries(
     ${PROJECT_NAME}
     PRIVATE
+        hwlib
     )
-
-target_include_directories(
-    ${PROJECT_NAME}
-    PRIVATE
-        $ENV{HOME}/ti/msp430-gcc/include
-)
 
 target_include_directories(
     ${PROJECT_NAME} PUBLIC

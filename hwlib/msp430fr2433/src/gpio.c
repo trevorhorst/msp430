@@ -1,4 +1,4 @@
-#include <msp430fr2433.h>
+#include <msp430.h>
 
 #include "hwlib/gpio.h"
 
