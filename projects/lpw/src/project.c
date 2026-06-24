@@ -27,15 +27,6 @@ void init_gpio(void)
     // Configure Port B (P3)
     PBOUT = 0x0000;             // Drive all outputs low
     PBDIR = 0xFFFF;             // Set all Port B pins as outputs
-
-    P1DIR |= LCD_CS_PIN;
-    P1OUT &= ~LCD_CS_PIN;           // Start with CS Low (Deselected)
-
-    /*
-     * Disable the GPIO power-on default high-impedance mode to activate
-     * previously configured port settings.
-     */
-    PM5CTL0 &= ~LOCKLPM5;
 }
 
 void init_rtc(void)
@@ -55,23 +46,23 @@ void init_rtc(void)
 
 void init_spi(void)
 {
-    // 1. Put eUSCI_B0 into software reset state
+    // Put eUSCI_B0 into software reset state
     UCB0CTLW0 |= UCSWRST;
 
-    // 2. Configure SPI Control Register 0 & 1
+    // Configure SPI Control Register 0 & 1
     // UCCKPH     : Data is changed on the first UCLK edge and captured on the following edge
     // UCMSB      : MSB first
     // UCMST      : Master mode
     // UCSYNC     : Synchronous mode (SPI)
     // UCSSEL__SMCLK : Use SMCLK as the clock source
-    UCB0CTLW0 = UCSWRST | UCCKPH | UCMSB | UCMST | UCSYNC | UCSSEL__SMCLK;
+    UCB0CTLW0 = UCSWRST | UCMST | UCSYNC | UCSSEL__SMCLK;
 
-    // 3. Configure Bit Rate (Clock Divider)
-    // If SMCLK is running at 1 MHz, dividing by 2 yields a 500 kHz SPI clock
+    // Configure Bit Rate (Clock Divider)
+    // If SMCLK is running at 1 MHz, dividing by 1 yields a 1 MHz SPI clock
     UCB0BRW = 1;
 
-    // 4. Configure GPIO Port Mapping for eUSCI_B0
-    // For P1.1, P1.2, P1.3, the secondary module function is SPI.
+    // Configure GPIO Port Mapping for eUSCI_B0
+    // For P1.1 (CLK), P1.2 (MOSI), P1.3 (MISO), the secondary module function is SPI.
     // Consult the device datasheet "Input/Output Diagrams" to verify PSEL bits.
     P1SEL0 |= (BIT1 | BIT2 | BIT3);
     P1SEL1 &= ~(BIT1 | BIT2 | BIT3);
@@ -111,27 +102,6 @@ int32_t spi_transfer(const uint8_t *buffer, int32_t len)
         len--;
     }
     return error;
-}
-
-int8_t init_display(const uint8_t *buffer, int32_t len)
-{
-    // Take chip select high
-    P2OUT |= BIT2;
-    __delay_cycles(3);
-    spi_write_byte(0x04);
-    spi_write_byte(0x00);
-    __delay_cycles(1);
-    // Take chip select low
-    P2OUT &= ~BIT2;
-
-    // Take chip select high
-    P2OUT |= BIT2;
-    __delay_cycles(3);
-    spi_write_byte(0x04);
-    spi_write_byte(0x00);
-    __delay_cycles(1);
-    // Take chip select low
-    P2OUT &= ~BIT2;
 }
 
 // Call this function periodically (e.g., inside your 1-second RTC wakeup ISR)
@@ -198,125 +168,64 @@ void draw_power_indicator(int8_t line)
     P1OUT &= ~LCD_CS_PIN;                   // Deselect Display (CS Low)
 }
 
+void display_clear(void)
+{
+    // Select Display (CS High)
+    P1OUT |= LCD_CS_PIN;
+
+    // Command code for clear mode
+    spi_write_byte(0x04);
+    // Traler byte (8 trailing dummy clocks)
+    spi_write_byte(0x00);
+
+    // Wait until eUSCI_B0 is no longer busy
+    while (UCB0STATW & UCBUSY);
+
+    // Deselect Display (CS Low)
+    P1OUT &= ~LCD_CS_PIN;
+}
+
 int run( void )
 {
     int32_t error = 0;
 
-    // Configure Port A (P1 and P2)
-    PAOUT = 0x0000;             // Drive all outputs low
-    PADIR = 0xFFFF;             // Set all Port A pins as outputs
-
-    // Configure Port B (P3)
-    PBOUT = 0x0000;             // Drive all outputs low
-    PBDIR = 0xFFFF;             // Set all Port B pins as outputs
+    init_gpio();
+    init_rtc();
+    init_spi();
 
     P1DIR &= ~LCD_POWER_PIN;
     P1REN |= LCD_POWER_PIN;
     P1OUT &= ~LCD_POWER_PIN;
 
-    // init_gpio();
-    init_rtc();
-    // init_spi();
-
-    // /* Toggle P1.0 LED to indicated device start up. */
-    // P1OUT ^= BIT0;
-    // __delay_cycles(100000);
-    // P1OUT ^= BIT0;
-
-    // // 8. Send initial Clear Command to flush display memory
-    // P1OUT |= LCD_CS_PIN;            // Select Display (CS High)
-
-    // while (!(UCB0IFG & UCTXIFG));
-    // UCB0TXBUF = 0x20;               // Command code for Clear Mode
-
-    // while (!(UCB0IFG & UCTXIFG));
-    // UCB0TXBUF = 0x00;               // Trailer byte (8 trailing dummy clocks)
-
-    // while (UCB0STATW & UCBUSY);     // Wait until eUSCI_B0 is no longer busy
-    // P1OUT &= ~LCD_CS_PIN;           // Deselect Display (CS Low)
-    //
-    // // 1. Configure Chip Select Pin as Output
-    // P1DIR |= LCD_CS_PIN;
-    // P1OUT &= ~LCD_CS_PIN;           // Start with CS Low (Deselected)
-
-    // 2. Put eUSCI_B0 into software reset to configure
-    UCB0CTLW0 |= UCSWRST;
-
-    // 3. Configure eUSCI_B0 SPI Settings
-    // UCCKPH       : Data captured on second edge
-    // UCMSB = 0    : LSB First (Crucial for Sharp Memory LCDs)
-    // UCMST        : Master Mode
-    // UCSYNC       : Synchronous Mode (SPI)
-    // UCSSEL__SMCLK: Use SMCLK as source
-    UCB0CTLW0 = UCSWRST | /*UCCKPH |*/ UCMST | UCSYNC | UCSSEL__SMCLK;
-
-    // 4. Set Clock Divider (Assuming default SMCLK = 1 MHz -> 1 MHz SPI clock)
-    UCB0BRW = 1;
-
-    // 5. Route Pins to eUSCI_B0 Peripheral Module
-    // Secondary module function for P1.1, P1.2, P1.3
-    P1SEL0 |= LCD_SPI_PINS;
-    P1SEL1 &= ~LCD_SPI_PINS;
-
-    // 6. Release eUSCI_B0 from reset
-    UCB0CTLW0 &= ~UCSWRST;
-
-    // 7. Disable the PM5 power-on high-impedance mode to activate configurations
+    // Disable the PM5 power-on high-impedance mode to activate configurations
     PM5CTL0 &= ~LOCKLPM5;
 
-    __delay_cycles(250000);
-    __delay_cycles(250000);
-    __delay_cycles(250000);
-    __delay_cycles(250000);
-    __delay_cycles(250000);
-    __delay_cycles(250000);
-    __delay_cycles(250000);
-    __delay_cycles(250000);
+    __delay_cycles(50000);
 
     P1DIR |= LCD_POWER_PIN;
     P1OUT |= LCD_POWER_PIN;                 // Turn panel power ON
 
-    __delay_cycles(250000);
-    __delay_cycles(250000);
-    __delay_cycles(250000);
-    __delay_cycles(250000);
+    __delay_cycles(50000);
 
-    // 8. Send initial Clear Command to flush display memory
-    P1OUT |= LCD_CS_PIN;            // Select Display (CS High)
-
-    while (!(UCB0IFG & UCTXIFG));
-    UCB0TXBUF = 0x04;               // Command code for Clear Mode
-
-    while (!(UCB0IFG & UCTXIFG));
-    UCB0TXBUF = 0x00;               // Trailer byte (8 trailing dummy clocks)
-
-    while (UCB0STATW & UCBUSY);     // Wait until eUSCI_B0 is no longer busy
-    P1OUT &= ~LCD_CS_PIN;           // Deselect Display (CS Low)
-    __delay_cycles(200000);
-
+    display_clear();
 
     int8_t line = 0;
     while( 1 ) {
+        // Toggle LED
         P1OUT ^= BIT0;
+        // Draw test pattern
         draw_power_indicator(line);
-        __bis_SR_register(LPM3_bits | GIE);
-        //__delay_cycles(250000);
+        // Toggle polarity once a second
         toggle_LCD_VCOM();
+
         line++;
         if(line > 68) {
             line = 0;
-            // 8. Send initial Clear Command to flush display memory
-            P1OUT |= LCD_CS_PIN;            // Select Display (CS High)
-
-            while (!(UCB0IFG & UCTXIFG));
-            UCB0TXBUF = 0x04;               // Command code for Clear Mode
-
-            while (!(UCB0IFG & UCTXIFG));
-            UCB0TXBUF = 0x00;               // Trailer byte (8 trailing dummy clocks)
-
-            while (UCB0STATW & UCBUSY);     // Wait until eUSCI_B0 is no longer busy
-            P1OUT &= ~LCD_CS_PIN;           // Deselect Display (CS Low)
+            display_clear();
         }
+
+        // Place MCU into Low Power Mode 3
+        __bis_SR_register(LPM3_bits | GIE);
     }
 
     return error;
