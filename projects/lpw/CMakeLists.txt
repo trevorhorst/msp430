@@ -12,12 +12,14 @@ option( USE_GPIO " Use optional GPIO library" ON )
 set( SOURCE
     ${SOURCE}
     src/project.c
+    src/frame.c
     )
 
 # List of header files
 set( HEADERS
     ${HEADERS}
     include/project/project.h
+    include/project/frame.h
     )
 
 add_library(
