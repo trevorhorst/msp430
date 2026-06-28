@@ -2,20 +2,20 @@ cmake_minimum_required(VERSION 3.5)
 
 project(
     hwlib
-    VERSION 0.1.0
+    VERSION 0.0.1
     DESCRIPTION "MSP430FR2433 Hardware Library"
     LANGUAGES C ASM
     )
 
-# if(USE_SPI)
-#     set(EXTRA_SOURCE ${EXTRA_SOURCE}
-#         src/spi.c
-#     )
-# 
-#     set(EXTRA_INCLUDE ${EXTRA_INCLUDE}
-#         include/hwlib/spi.h
-#     )
-# endif()
+if(USE_SPI)
+    set(EXTRA_SOURCE ${EXTRA_SOURCE}
+        src/spi.c
+    )
+
+    set(EXTRA_INCLUDE ${EXTRA_INCLUDE}
+        include/hwlib/spi.h
+    )
+endif()
 
 set(
     INCLUDE ${INCLUDE}
@@ -25,7 +25,7 @@ set(
     # include/hwlib/timer.h
     # include/hwlib/uart.h
     # include/hwlib/usci.h
-    # ${EXTRA_INCLUDE}
+    ${EXTRA_INCLUDE}
     )
 
 set(
@@ -36,7 +36,7 @@ set(
     # src/timer.c
     # src/uart.c
     # src/usci.c
-    # ${EXTRA_SOURCE}
+    ${EXTRA_SOURCE}
     )
 
 add_library(

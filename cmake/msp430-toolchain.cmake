@@ -29,5 +29,5 @@ set(MCU_SUPPORT_DIR "${TOOLCHAIN_PREFIX}/include")
 
 include_directories(${MCU_SUPPORT_DIR})
 
-add_compile_options(-mmcu=${MCU} -I${MCU_SUPPORT_DIR} -O2 -Wall -g -pedantic)
+add_compile_options(-mmcu=${MCU} -I${MCU_SUPPORT_DIR} -O2 -Wall -Wextra -pedantic -g)
 add_link_options(-mmcu=${MCU} -L${MCU_SUPPORT_DIR} -Wl,-Map=${MCU}.map)

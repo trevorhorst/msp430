@@ -2,6 +2,7 @@
 
 #include "project/project.h"
 #include "project/frame.h"
+#include "project/sharp_memory_display.h"
 
 #define LCD_SPI_CLK		BIT1	// P1.1 SPI Clock
 #define LCD_SPI_MOSI	BIT2	// P1.2 SPI Master Out Slave In
@@ -11,8 +12,10 @@
 
 #define LCD_SPI_PINS    (LCD_SPI_CLK | LCD_SPI_MOSI | LCD_SPI_MISO)
 
-#define LCD_WIDTH		160			// LCD is 160 bits wide
-#define LCD_HEIGHT		68			// LCD is 68 lines high
+#define LCD_WIDTH		128		// LCD is 160 bits wide
+#define LCD_HEIGHT		128		// LCD is 68 lines high
+// #define LCD_WIDTH		160			// LCD is 160 bits wide
+// #define LCD_HEIGHT		68			// LCD is 68 lines high
 #define LCD_BUFFER_SIZE	(LCD_WIDTH * LCD_HEIGHT)
 
 static const uint8_t segment_display_number[10][117] = {
@@ -95,7 +98,7 @@ static const uint8_t segment_display_number[10][117] = {
         0x00, 0x00, 0x0F,
         0x00, 0x00, 0x0F,
         0x00, 0x00, 0x07,
-        0x00, 0x00, 0x01,
+        0x00, 0x00, 0x03,
         0x00, 0x00, 0x00,
         0x00, 0x00, 0x00
     },
@@ -490,7 +493,7 @@ void init_spi(void)
 
     // Configure Bit Rate (Clock Divider)
     // If SMCLK is running at 1 MHz, dividing by 1 yields a 1 MHz SPI clock
-    UCB0BRW = 1;
+    UCB0BRW = 2;
 
     // Configure GPIO Port Mapping for eUSCI_B0
     // For P1.1 (CLK), P1.2 (MOSI), P1.3 (MISO), the secondary module function is SPI.
@@ -556,46 +559,90 @@ void toggle_LCD_VCOM(void)
     vcom_state ^= 0x02;                     // Flip the VCOM bit for the next cycle
 }
 
-void draw_power_indicator(int8_t line)
+uint8_t reverse_bits(uint8_t b) {
+    b = (b & 0xF0) >> 4 | (b & 0x0F) << 4;
+    b = (b & 0xCC) >> 2 | (b & 0x33) << 2;
+    b = (b & 0xAA) >> 1 | (b & 0x55) << 1;
+    return b;
+}
+
+const uint8_t CYAN_LINE_BUFFER[48] = {
+    0x24, 0x49, 0x92,  // Pixels 0 - 7
+    0x24, 0x49, 0x92,  // Pixels 8 - 15
+    0x24, 0x49, 0x92,  // Pixels 16 - 23
+    0x24, 0x49, 0x92,  // Pixels 24 - 31
+    0x24, 0x49, 0x92,  // Pixels 32 - 39
+    0x24, 0x49, 0x92,  // Pixels 40 - 47
+    0x24, 0x49, 0x92,  // Pixels 48 - 55
+    0x24, 0x49, 0x92,  // Pixels 56 - 63
+    0x24, 0x49, 0x92,  // Pixels 64 - 71
+    0x24, 0x49, 0x92,  // Pixels 72 - 79
+    0x24, 0x49, 0x92,  // Pixels 80 - 87
+    0x24, 0x49, 0x92,  // Pixels 88 - 95
+    0x24, 0x49, 0x92,  // Pixels 96 - 103
+    0x24, 0x49, 0x92,  // Pixels 104 - 111
+    0x24, 0x49, 0x92,  // Pixels 112 - 119
+    0x24, 0x49, 0x92  // Pixels 120 - 127
+};
+
+const uint8_t RED_LINE_BUFFER[48] = {
+    0x49, 0x92, 0x24,  // Pixels 0 - 7
+    0x49, 0x92, 0x24,  // Pixels 8 - 15
+    0x49, 0x92, 0x24,  // Pixels 16 - 23
+    0x49, 0x92, 0x24,  // Pixels 24 - 31
+    0x49, 0x92, 0x24,  // Pixels 32 - 39
+    0x49, 0x92, 0x24,  // Pixels 40 - 47
+    0x49, 0x92, 0x24,  // Pixels 48 - 55
+    0x49, 0x92, 0x24,  // Pixels 56 - 63
+    0x49, 0x92, 0x24,  // Pixels 64 - 71
+    0x49, 0x92, 0x24,  // Pixels 72 - 79
+    0x49, 0x92, 0x24,  // Pixels 80 - 87
+    0x49, 0x92, 0x24,  // Pixels 88 - 95
+    0x49, 0x92, 0x24,  // Pixels 96 - 103
+    0x49, 0x92, 0x24,  // Pixels 104 - 111
+    0x49, 0x92, 0x24,  // Pixels 112 - 119
+    0x49, 0x92, 0x24   // Pixels 120 - 127
+};
+
+const uint8_t GREEN_LINE_BUFFER[48] = {
+    0x92, 0x24, 0x49,  // Pixels 0 - 7
+    0x92, 0x24, 0x49,  // Pixels 8 - 15
+    0x92, 0x24, 0x49,  // Pixels 16 - 23
+    0x92, 0x24, 0x49,  // Pixels 24 - 31
+    0x92, 0x24, 0x49,  // Pixels 32 - 39
+    0x92, 0x24, 0x49,  // Pixels 40 - 47
+    0x92, 0x24, 0x49,  // Pixels 48 - 55
+    0x92, 0x24, 0x49,  // Pixels 56 - 63
+    0x92, 0x24, 0x49,  // Pixels 64 - 71
+    0x92, 0x24, 0x49,  // Pixels 72 - 79
+    0x92, 0x24, 0x49,  // Pixels 80 - 87
+    0x92, 0x24, 0x49,  // Pixels 88 - 95
+    0x92, 0x24, 0x49,  // Pixels 96 - 103
+    0x92, 0x24, 0x49,  // Pixels 104 - 111
+    0x92, 0x24, 0x49,  // Pixels 112 - 119
+    0x92, 0x24, 0x49  // Pixels 120 - 127
+};
+void draw_power_indicator(int8_t line, const uint8_t *buffer)
 {
     P1OUT |= LCD_CS_PIN;                    // Select Display (CS High)
+
+    __delay_cycles(12);
 
     // 1. Send Mode Flag: Write/Update Line Command (0x80)
     spi_write_byte(0x01);
 
-    // 2. Send Line Address: We will write to Line 1
-    // The display expects addresses LSB-first. Line 1 binary is 00000001.
-    // In LSB-first format, that reverses to 10000000 (0x80).
     spi_write_byte(line);
 
-    // 3. Send 16 Bytes of Row Data (128 pixels total)
-    // 0x00 is transparent/white, 0xFF is solid black.
-    // Let's clear the first 7 bytes, place a dark indicator in the 8th and 9th bytes,
-    // and clear the remaining bytes.
-
     int i;
-    for (i = 0; i < 20; i++) {
-        if(line & 0x1) {
-            spi_write_byte(0xAA);               // Clear pixels 0 to 55
-        } else {
-            spi_write_byte(0x55);               // Clear pixels 0 to 55
-        }
+    for (i = 0; i < 48; i++) {
+        spi_write_byte(buffer[i]);
     }
 
-    // // Centered small dash symbol (Pixels 56 to 71)
-    // spi_write_byte(0xFF);
-    // spi_write_byte(0xFF);
-
-    // for (i = 0; i < 9; i++) {
-    //     spi_write_byte(0xFF);               // Clear pixels 72 to 127
-    // }
-
-    // 4. Send 8 trailing dummy clocks to complete the line update
     spi_write_byte(0x00);
     spi_write_byte(0x00);
 
-    // 5. Finalize transfer
     while (UCB0STATW & UCBUSY);             // Wait until the hardware finishes shifting bits
+    __delay_cycles(12);
     P1OUT &= ~LCD_CS_PIN;                   // Deselect Display (CS Low)
 }
 
@@ -671,6 +718,60 @@ void display_frame_buffer(uint8_t *buffer, uint8_t width, uint8_t height)
     P1OUT &= ~LCD_CS_PIN;                   // Deselect Display (CS Low)
 }
 
+/**
+ * @brief Flushes the 2KB virtual buffer to the 3-bit color display
+ * by expanding 16 bytes of RAM into 48 bytes of SPI data on the fly.
+ */
+void display_frame_buffer_rgb(uint8_t *buffer) {
+    P1OUT |= LCD_CS_PIN; // CS High
+    spi_write_byte(0x01); // Write Command
+
+    uint8_t mono_line_stride = 16;
+
+    for (uint8_t line = 0; line < 128; line++) {
+        // Send line address (1-indexed: 1 to 128)
+        spi_write_byte(line + 1);
+
+        // Process the 16 bytes of RAM for this row
+        for (uint8_t b = 0; b < mono_line_stride; b++) {
+            uint8_t mono_byte = buffer[(line * mono_line_stride) + b];
+
+            // Expand 8 monochrome bits into 3 SPI bytes (24 bits total)
+            uint8_t spi_byte0 = 0;
+            uint8_t spi_byte1 = 0;
+            uint8_t spi_byte2 = 0;
+
+            // Micro-loop to expand bits 7 down to 0
+            // Bit 7 to 5 map to spi_byte0; 4 to 2 to spi_byte1; 1 to 0 to spi_byte2
+            if (mono_byte & 0x80) spi_byte0 |= 0xE0; // Pixel 0: RGB = 111
+            if (mono_byte & 0x40) spi_byte0 |= 0x1C; // Pixel 1: RGB = 111
+            if (mono_byte & 0x20) {
+                spi_byte0 |= 0x03;                   // Pixel 2: RG-
+                spi_byte1 |= 0x80;                   // Pixel 2: --B
+            }
+            if (mono_byte & 0x10) spi_byte1 |= 0x70; // Pixel 3: RGB = 111
+            if (mono_byte & 0x08) spi_byte1 |= 0x0E; // Pixel 4: RGB = 111
+            if (mono_byte & 0x04) {
+                spi_byte1 |= 0x01;                   // Pixel 5: R--
+                spi_byte2 |= 0xC0;                   // Pixel 5: -GB
+            }
+            if (mono_byte & 0x02) spi_byte2 |= 0x38; // Pixel 6: RGB = 111
+            if (mono_byte & 0x01) spi_byte2 |= 0x07; // Pixel 7: RGB = 111
+
+            // Send the 3 expanded bytes sequentially (Totaling 48 bytes across the row loop)
+            spi_write_byte(spi_byte2);
+            spi_write_byte(spi_byte1);
+            spi_write_byte(spi_byte0);
+        }
+
+        spi_write_byte(0x00); // Line padding
+    }
+
+    spi_write_byte(0x00); // Frame trailer
+    while (UCB0STATW & UCBUSY);
+    P1OUT &= ~LCD_CS_PIN; // CS Low
+}
+
 int run( void )
 {
     int32_t error = 0;
@@ -688,42 +789,101 @@ int run( void )
 
     __delay_cycles(50000);
 
-    // // Initialize the frame buffer
+    // Initialize the frame buffer
     uint8_t frame_buffer[LCD_BUFFER_SIZE / 8];
-    // for(uint32_t i = 0; i < sizeof(frame_buffer); i++) {
-    //     frame_buffer[i] = 0x00;
-    // }
-    // frame_buffer[0] = 0xf7;
-
     Canvas frame = {
         .image = frame_buffer,
         .height = LCD_HEIGHT,
         .width = LCD_WIDTH,
         .mirror = CANVAS_MIRROR_NONE,
-        .rotate = CANVAS_ROTATE_180,
+        .rotate = CANVAS_ROTATE_0,
     };
     canvas_fill(&frame, 0x00);
     canvas_draw_sprite(&frame, segment_display_number[0], 24,39, 5, 5, WHITE);
     // canvas_draw_point(&frame, 5, 5, WHITE, PIXEL_1X1);
     // canvas_set_pixel(&frame, 5, 5, 0, 0, WHITE);
 
+    sharp_memory_display display = {
+        .width = LCD_WIDTH,
+        .height = LCD_HEIGHT,
+        .cs = LCD_CS_PIN,
+        .disp = 0,
+        .extcomin = 0
+    };
+
     P1DIR |= LCD_POWER_PIN;
     P1OUT |= LCD_POWER_PIN;                 // Turn panel power ON
 
+    // Allow time for display to power up
     __delay_cycles(50000);
-    display_clear();
-    __delay_cycles(50000);
+    sharp_memory_display_init(&display);
+    // sharp_memory_display_frame_buffer_part(&display, frame.image, 25, 1);
 
-    int8_t count = 0;
+    uint8_t red_green_buffer[48];
+    for(uint8_t i = 0; i < sizeof(red_green_buffer); i++) {
+        red_green_buffer[i] = RED_LINE_BUFFER[i] | GREEN_LINE_BUFFER[i];
+    }
+
+    uint8_t red_blue_buffer[48];
+    for(uint8_t i = 0; i < sizeof(red_green_buffer); i++) {
+        red_blue_buffer[i] = RED_LINE_BUFFER[i] | CYAN_LINE_BUFFER[i];
+    }
+
+    uint8_t green_blue_buffer[48];
+    for(uint8_t i = 0; i < sizeof(green_blue_buffer); i++) {
+        green_blue_buffer[i] = GREEN_LINE_BUFFER[i] | CYAN_LINE_BUFFER[i];
+    }
+
+    uint8_t black_buffer[48];
+    for(uint8_t i = 0; i < sizeof(green_blue_buffer); i++) {
+        if(i & 0x1) {
+            black_buffer[i] = 0x00;
+        }
+    }
+
+    display_frame_buffer_rgb(frame.image);
+
+    int8_t count = 1;
     while( 1 ) {
         // Toggle LED
         P1OUT ^= BIT0;
-        display_frame_buffer(frame_buffer, LCD_WIDTH, LCD_HEIGHT);
-        // Draw test pattern
-        // draw_power_indicator(line);
-        // Toggle polarity once a second
-        toggle_LCD_VCOM();
-        canvas_draw_sprite(&frame, segment_display_number[count], 24, 39, 5, 5, WHITE);
+
+        // Display the frame and toggle vcom
+        sharp_memory_display_toggle_vcom(&display);
+
+        // for(uint8_t i = 1; i < 10; i++) {
+        //     draw_power_indicator(i, RED_LINE_BUFFER);
+        //     // sharp_memory_display_frame_buffer_part(&display, frame.image, i, 1);
+        // }
+        // for(uint8_t i = 10; i < 20; i++) {
+        //     draw_power_indicator(i, GREEN_LINE_BUFFER);
+        //     // sharp_memory_display_frame_buffer_part(&display, frame.image, i, 1);
+        // }
+        // for(uint8_t i = 20; i < 30; i++) {
+        //     draw_power_indicator(i, red_green_buffer);
+        //     // sharp_memory_display_frame_buffer_part(&display, frame.image, i, 1);
+        // }
+        // for(uint8_t i = 30; i < 40; i++) {
+        //     draw_power_indicator(i, CYAN_LINE_BUFFER);
+        //     // sharp_memory_display_frame_buffer_part(&display, frame.image, i, 1);
+        // }
+        // for(uint8_t i = 40; i < 50; i++) {
+        //     draw_power_indicator(i, red_blue_buffer);
+        //     // sharp_memory_display_frame_buffer_part(&display, frame.image, i, 1);
+        // }
+        // for(uint8_t i = 50; i < 60; i++) {
+        //     draw_power_indicator(i, green_blue_buffer);
+        //     // sharp_memory_display_frame_buffer_part(&display, frame.image, i, 1);
+        // }
+
+        // for(uint8_t i = 60; i < 70; i++) {
+        //     draw_power_indicator(i, black_buffer);
+        //     // sharp_memory_display_frame_buffer_part(&display, frame.image, i, 1);
+        // }
+        display_frame_buffer_rgb(frame.image);
+
+        // Update the count on the display
+        canvas_draw_sprite(&frame, segment_display_number[count], 24,39, 5, 5, WHITE);
 
         count++;
         if(count > 9) {

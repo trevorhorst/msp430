@@ -4,6 +4,7 @@ project(lpw
     )
 
 option( USE_GPIO " Use optional GPIO library" ON )
+option( USE_SPI "Use optional SPI library" ON )
 # option( USE_I2C "Use optional I2C library" ON )
 # option( USE_UART "Use optional UART library" ON )
 # option( USE_SSD1306 "Use optional SSD1306 library" ON )
@@ -12,6 +13,7 @@ option( USE_GPIO " Use optional GPIO library" ON )
 set( SOURCE
     ${SOURCE}
     src/project.c
+    src/sharp_memory_display.c
     src/frame.c
     )
 
@@ -19,6 +21,7 @@ set( SOURCE
 set( HEADERS
     ${HEADERS}
     include/project/project.h
+    include/project/sharp_memory_display.h
     include/project/frame.h
     )
 
