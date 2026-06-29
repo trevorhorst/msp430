@@ -38,7 +38,6 @@ void sharp_memory_display_frame_buffer_part(sharp_memory_display *display, uint8
 
     // Select Display (CS High)
     P1OUT |= display->cs;
-    __delay_cycles(6000);
     // Send Mode Flag: Write/Update Line Command (0x01)
     hw_spi_write_byte(0x01);
     for(uint32_t y = line_start; y < (line_start + num_lines); y++) {
@@ -46,7 +45,7 @@ void sharp_memory_display_frame_buffer_part(sharp_memory_display *display, uint8
 
         // Send Line Address: We will write to Line 1
         hw_spi_write_byte(y + 1);
-        hw_spi_write(&buffer[offset], display->width - 97);
+        hw_spi_write(&buffer[offset], width);
 
         // Send 8 trailing dummy clocks to complete the line update
         hw_spi_write_byte(0x00);
@@ -54,7 +53,6 @@ void sharp_memory_display_frame_buffer_part(sharp_memory_display *display, uint8
     hw_spi_write_byte(0x00);
     // Finalize transfer
     while (UCB0STATW & UCBUSY);             // Wait until the hardware finishes shifting bits
-    __delay_cycles(2000);
     P1OUT &= ~display->cs;                   // Deselect Display (CS Low)
 }
 

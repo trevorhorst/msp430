@@ -52,4 +52,5 @@ void canvas_draw_line(Canvas *canvas, uint32_t x_start, uint32_t y_start,
 void canvas_draw_sprite(Canvas *canvas, const uint8_t* sprite, int sprite_w, int sprite_h,
                         int screen_x, int screen_y,
                         CanvasColor color);
+
 #endif // DRAW_CANVAS_H

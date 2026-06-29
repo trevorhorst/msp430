@@ -12,10 +12,10 @@
 
 #define LCD_SPI_PINS    (LCD_SPI_CLK | LCD_SPI_MOSI | LCD_SPI_MISO)
 
-#define LCD_WIDTH		128		// LCD is 160 bits wide
-#define LCD_HEIGHT		128		// LCD is 68 lines high
-// #define LCD_WIDTH		160			// LCD is 160 bits wide
-// #define LCD_HEIGHT		68			// LCD is 68 lines high
+// #define LCD_WIDTH		128		// LCD is 160 bits wide
+// #define LCD_HEIGHT		128		// LCD is 68 lines high
+#define LCD_WIDTH		160			// LCD is 160 bits wide
+#define LCD_HEIGHT		68			// LCD is 68 lines high
 #define LCD_BUFFER_SIZE	(LCD_WIDTH * LCD_HEIGHT)
 
 static const uint8_t segment_display_number[10][117] = {
@@ -40,21 +40,21 @@ static const uint8_t segment_display_number[10][117] = {
         0xE0, 0x00, 0x07,  // 111..................111
         0xC0, 0x00, 0x03,  // 11....................11
         0x00, 0x00, 0x00,  // ........................
-        0xC0, 0x00, 0x03,  // 1.....................11
-        0xE0, 0x00, 0x07,  // 11...................111
-        0xF0, 0x00, 0x0F,  // 111.................1111
-        0xF0, 0x00, 0x0F,  // 111.................1111
-        0xF0, 0x00, 0x0F,  // 111.................1111
-        0xF0, 0x00, 0x0F,  // 111.................1111
-        0xF0, 0x00, 0x0F,  // 111.................1111
-        0xF0, 0x00, 0x0F,  // 111.................1111
-        0xF0, 0x00, 0x0F,  // 111.................1111
-        0xF0, 0x00, 0x0F,  // 111.................1111
-        0xF0, 0x00, 0x0F,  // 111.................1111
-        0xF0, 0x00, 0x0F,  // 111.................1111
-        0xF0, 0x00, 0x0F,  // 111.................1111
-        0xF0, 0x00, 0x0F,  // 111.................1111
-        0xF0, 0x00, 0x0F,  // 111.................1111
+        0xC0, 0x00, 0x03,  // 11....................11
+        0xE0, 0x00, 0x07,  // 111..................111
+        0xF0, 0x00, 0x0F,  // 1111................1111
+        0xF0, 0x00, 0x0F,  // 1111................1111
+        0xF0, 0x00, 0x0F,  // 1111................1111
+        0xF0, 0x00, 0x0F,  // 1111................1111
+        0xF0, 0x00, 0x0F,  // 1111................1111
+        0xF0, 0x00, 0x0F,  // 1111................1111
+        0xF0, 0x00, 0x0F,  // 1111................1111
+        0xF0, 0x00, 0x0F,  // 1111................1111
+        0xF0, 0x00, 0x0F,  // 1111................1111
+        0xF0, 0x00, 0x0F,  // 1111................1111
+        0xF0, 0x00, 0x0F,  // 1111................1111
+        0xF0, 0x00, 0x0F,  // 1111................1111
+        0xF0, 0x00, 0x0F,  // 1111................1111
         0xEF, 0xFF, 0xF7,  // 111.1111111111111111.111
         0xDF, 0xFF, 0xFB,  // 11.111111111111111111.11
         0x3F, 0xFF, 0xFC,  // ..11111111111111111111..
@@ -493,7 +493,7 @@ void init_spi(void)
 
     // Configure Bit Rate (Clock Divider)
     // If SMCLK is running at 1 MHz, dividing by 1 yields a 1 MHz SPI clock
-    UCB0BRW = 2;
+    UCB0BRW = 1;
 
     // Configure GPIO Port Mapping for eUSCI_B0
     // For P1.1 (CLK), P1.2 (MOSI), P1.3 (MISO), the secondary module function is SPI.
@@ -536,27 +536,6 @@ int32_t spi_transfer(const uint8_t *buffer, int32_t len)
         len--;
     }
     return error;
-}
-
-// Call this function periodically (e.g., inside your 1-second RTC wakeup ISR)
-void toggle_LCD_VCOM(void)
-{
-    //static unsigned char vcom_state = 0x40; // Starts with VCOM bit high (0x40)
-    static unsigned char vcom_state = 0x02; // Starts with VCOM bit high (0x40)
-
-    P1OUT |= LCD_CS_PIN;                    // CS High
-
-    while (!(UCB0IFG & UCTXIFG));
-    UCB0TXBUF = vcom_state;                 // Send Toggle VCOM command bit
-
-    while (!(UCB0IFG & UCTXIFG));
-    UCB0TXBUF = 0x00;                       // 8 trailing dummy clocks
-
-    while (UCB0STATW & UCBUSY);
-    P1OUT &= ~LCD_CS_PIN;                   // CS Low
-
-    //vcom_state ^= 0x40;                     // Flip the VCOM bit for the next cycle
-    vcom_state ^= 0x02;                     // Flip the VCOM bit for the next cycle
 }
 
 uint8_t reverse_bits(uint8_t b) {
@@ -622,6 +601,7 @@ const uint8_t GREEN_LINE_BUFFER[48] = {
     0x92, 0x24, 0x49,  // Pixels 112 - 119
     0x92, 0x24, 0x49  // Pixels 120 - 127
 };
+
 void draw_power_indicator(int8_t line, const uint8_t *buffer)
 {
     P1OUT |= LCD_CS_PIN;                    // Select Display (CS High)
@@ -643,51 +623,6 @@ void draw_power_indicator(int8_t line, const uint8_t *buffer)
 
     while (UCB0STATW & UCBUSY);             // Wait until the hardware finishes shifting bits
     __delay_cycles(12);
-    P1OUT &= ~LCD_CS_PIN;                   // Deselect Display (CS Low)
-}
-
-void display_clear(void)
-{
-    // Select Display (CS High)
-    P1OUT |= LCD_CS_PIN;
-
-    // Command code for clear mode
-    spi_write_byte(0x04);
-    // Traler byte (8 trailing dummy clocks)
-    spi_write_byte(0x00);
-
-    // Wait until eUSCI_B0 is no longer busy
-    while (UCB0STATW & UCBUSY);
-
-    // Deselect Display (CS Low)
-    P1OUT &= ~LCD_CS_PIN;
-}
-
-void display_fill()
-{
-    // Select Display (CS High)
-    P1OUT |= LCD_CS_PIN;
-    // Send Mode Flag: Write/Update Line Command (0x01)
-    spi_write_byte(0x01);
-    for(uint8_t line = 1; line <= 68; line++) {
-
-        // Send Line Address: We will write to Line 1
-        spi_write_byte(line);
-
-        // Send 20 Bytes of Row Data (160 pixels total)
-        // 0x00 is transparent/white, 0xFF is solid black.
-        int i;
-        for(i = 0; i < 20; i++) {
-            // Set all pixels to solid black
-            spi_write_byte(0x00);
-        }
-
-        // Send 8 trailing dummy clocks to complete the line update
-        spi_write_byte(0x00);
-    }
-    spi_write_byte(0x00);
-    // 5. Finalize transfer
-    while (UCB0STATW & UCBUSY);             // Wait until the hardware finishes shifting bits
     P1OUT &= ~LCD_CS_PIN;                   // Deselect Display (CS Low)
 }
 
@@ -772,13 +707,81 @@ void display_frame_buffer_rgb(uint8_t *buffer) {
     P1OUT &= ~LCD_CS_PIN; // CS Low
 }
 
+#define FLLN_Msk (0x03FF)
+
+void init_clocks_4mhz(void)
+{
+    // 2. Configure FLL reference clock source (Select REFO = 32768Hz)
+    __bis_SR_register(SCG0);                 // Disable the FLL loop to allow configuration
+    CSCTL3 |= SELREF__REFOCLK;               // Set REFO as FLL reference source
+
+    // 3. Set DCO range and multiplier for 4 MHz
+    CSCTL1 &= ~(DCORSEL_7);                  // Clear DCO frequency select bits
+    CSCTL1 |= DCORSEL_3;                     // Set DCO range to 4MHz nominal
+
+    // CORRECTED: Clear the FLLN mask and set it directly to 121
+    CSCTL2 &= ~FLLN_Msk;                     // FLLN_Msk clears bits 0-9 (0x03FF)
+    CSCTL2 |= 121;                           // 32768 Hz * (121 + 1) = ~4 MHz
+
+    __bic_SR_register(SCG0);                 // Enable the FLL loop
+
+    // 4. Wait for FLL to lock
+    while(CSCTL7 & (FLLUNLOCK0 | FLLUNLOCK1)) {
+        CSCTL7 &= ~(FLLUNLOCK0 | FLLUNLOCK1); // Clear FLL unlock flags
+        __delay_cycles(100);                  // Short delay before checking again
+    }
+
+    // 5. Select DCOCLKDIV as source for MCLK and SMCLK
+    CSCTL4 = SELMS__DCOCLKDIV | SELA__REFOCLK;
+}
+
+void init_clocks_2mhz(void) {
+    // 1. Clear lock bit to enable I/O pins
+    PM5CTL0 &= ~LOCKLPM5;
+
+    // 2. Configure FLL reference clock source (Select REFO = 32768Hz)
+    __bis_SR_register(SCG0);                 // Disable the FLL loop to allow configuration
+    CSCTL3 |= SELREF__REFOCLK;               // Set REFO as FLL reference source
+
+    // 3. Set DCO range and multiplier for 2 MHz
+    CSCTL1 &= ~(DCORSEL_7);                  // Clear DCO frequency select bits
+    CSCTL1 |= DCORSEL_2;                     // Set DCO range to 2MHz nominal (typically 2-4MHz)
+
+    // Set the FLLN mask and set it directly to 60
+    CSCTL2 &= ~FLLN_Msk;                     // Clear bits 0-9
+    CSCTL2 |= 60;                            // 32768 Hz * (60 + 1) = 1,998,848 Hz (~2 MHz)
+
+    __bic_SR_register(SCG0);                 // Enable the FLL loop
+
+    // 4. Wait for FLL to lock
+    while(CSCTL7 & (FLLUNLOCK0 | FLLUNLOCK1)) {
+        CSCTL7 &= ~(FLLUNLOCK0 | FLLUNLOCK1); // Clear FLL unlock flags
+        __delay_cycles(100);                  // Short delay before checking again
+    }
+
+    // 5. Select DCOCLKDIV as source for MCLK and SMCLK (both now 2 MHz)
+    CSCTL4 = SELMS__DCOCLKDIV | SELA__REFOCLK;
+}
+
+void extract_digits(uint16_t number, uint8_t digits[4]) {
+    // Handle negative numbers just in case
+    if (number < 0) {
+        number = -number;
+    }
+
+    // Extract digits from right to left
+    for(int8_t i = 3; i >= 0; i--) {
+        digits[i] = number % 10; // Get the last digit
+        number /= 10;            // Remove the last digit
+    }
+}
+
 int run( void )
 {
     int32_t error = 0;
 
     init_gpio();
     init_rtc();
-    init_spi();
 
     P1DIR &= ~LCD_POWER_PIN;
     P1REN |= LCD_POWER_PIN;
@@ -786,6 +789,9 @@ int run( void )
 
     // Disable the PM5 power-on high-impedance mode to activate configurations
     PM5CTL0 &= ~LOCKLPM5;
+
+    init_clocks_2mhz();
+    init_spi();
 
     __delay_cycles(50000);
 
@@ -796,10 +802,9 @@ int run( void )
         .height = LCD_HEIGHT,
         .width = LCD_WIDTH,
         .mirror = CANVAS_MIRROR_NONE,
-        .rotate = CANVAS_ROTATE_0,
+        .rotate = CANVAS_ROTATE_180,
     };
     canvas_fill(&frame, 0x00);
-    canvas_draw_sprite(&frame, segment_display_number[0], 24,39, 5, 5, WHITE);
     // canvas_draw_point(&frame, 5, 5, WHITE, PIXEL_1X1);
     // canvas_set_pixel(&frame, 5, 5, 0, 0, WHITE);
 
@@ -817,33 +822,13 @@ int run( void )
     // Allow time for display to power up
     __delay_cycles(50000);
     sharp_memory_display_init(&display);
-    // sharp_memory_display_frame_buffer_part(&display, frame.image, 25, 1);
 
-    uint8_t red_green_buffer[48];
-    for(uint8_t i = 0; i < sizeof(red_green_buffer); i++) {
-        red_green_buffer[i] = RED_LINE_BUFFER[i] | GREEN_LINE_BUFFER[i];
-    }
-
-    uint8_t red_blue_buffer[48];
-    for(uint8_t i = 0; i < sizeof(red_green_buffer); i++) {
-        red_blue_buffer[i] = RED_LINE_BUFFER[i] | CYAN_LINE_BUFFER[i];
-    }
-
-    uint8_t green_blue_buffer[48];
-    for(uint8_t i = 0; i < sizeof(green_blue_buffer); i++) {
-        green_blue_buffer[i] = GREEN_LINE_BUFFER[i] | CYAN_LINE_BUFFER[i];
-    }
-
-    uint8_t black_buffer[48];
-    for(uint8_t i = 0; i < sizeof(green_blue_buffer); i++) {
-        if(i & 0x1) {
-            black_buffer[i] = 0x00;
-        }
-    }
-
-    display_frame_buffer_rgb(frame.image);
-
-    int8_t count = 1;
+    uint16_t count = 0;
+    uint8_t digits[4] = {0, 0, 0, 0};
+    int8_t last_min_tens = -1;
+    int8_t last_min_ones = -1;
+    int8_t last_sec_tens = -1;
+    int8_t last_sec_ones = -1;
     while( 1 ) {
         // Toggle LED
         P1OUT ^= BIT0;
@@ -851,44 +836,35 @@ int run( void )
         // Display the frame and toggle vcom
         sharp_memory_display_toggle_vcom(&display);
 
-        // for(uint8_t i = 1; i < 10; i++) {
-        //     draw_power_indicator(i, RED_LINE_BUFFER);
-        //     // sharp_memory_display_frame_buffer_part(&display, frame.image, i, 1);
-        // }
-        // for(uint8_t i = 10; i < 20; i++) {
-        //     draw_power_indicator(i, GREEN_LINE_BUFFER);
-        //     // sharp_memory_display_frame_buffer_part(&display, frame.image, i, 1);
-        // }
-        // for(uint8_t i = 20; i < 30; i++) {
-        //     draw_power_indicator(i, red_green_buffer);
-        //     // sharp_memory_display_frame_buffer_part(&display, frame.image, i, 1);
-        // }
-        // for(uint8_t i = 30; i < 40; i++) {
-        //     draw_power_indicator(i, CYAN_LINE_BUFFER);
-        //     // sharp_memory_display_frame_buffer_part(&display, frame.image, i, 1);
-        // }
-        // for(uint8_t i = 40; i < 50; i++) {
-        //     draw_power_indicator(i, red_blue_buffer);
-        //     // sharp_memory_display_frame_buffer_part(&display, frame.image, i, 1);
-        // }
-        // for(uint8_t i = 50; i < 60; i++) {
-        //     draw_power_indicator(i, green_blue_buffer);
-        //     // sharp_memory_display_frame_buffer_part(&display, frame.image, i, 1);
-        // }
+        // display_frame_buffer_rgb(frame.image);
+        sharp_memory_display_frame_buffer(&display, frame.image);
 
-        // for(uint8_t i = 60; i < 70; i++) {
-        //     draw_power_indicator(i, black_buffer);
-        //     // sharp_memory_display_frame_buffer_part(&display, frame.image, i, 1);
-        // }
-        display_frame_buffer_rgb(frame.image);
+        extract_digits(count, digits);
 
         // Update the count on the display
-        canvas_draw_sprite(&frame, segment_display_number[count], 24,39, 5, 5, WHITE);
+        if(digits[0] != last_min_tens) {
+            canvas_draw_sprite(&frame, segment_display_number[digits[0]], 24, 39,  12, 10, WHITE);
+        }
+        last_min_tens = digits[0];
+
+        if(digits[1] != last_min_ones) {
+            canvas_draw_sprite(&frame, segment_display_number[digits[1]], 24, 39,  48, 10, WHITE);
+        }
+        last_min_ones = digits[1];
+
+        if(digits[2] != last_sec_tens) {
+            canvas_draw_sprite(&frame, segment_display_number[digits[2]], 24, 39,  84, 10, WHITE);
+        }
+        last_sec_tens = digits[2];
+
+        if(digits[3] != last_sec_ones) {
+            canvas_draw_sprite(&frame, segment_display_number[digits[3]], 24, 39, 120, 10, WHITE);
+        }
+        last_sec_ones = digits[3];
 
         count++;
-        if(count > 9) {
+        if(count > 9999) {
             count = 0;
-            // display_clear();
         }
 
         // Place MCU into Low Power Mode 3
